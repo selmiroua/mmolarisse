@@ -1,0 +1,61 @@
+<div class="welcome-modal">
+  <div class="modal-content" *ngIf="currentStep === 1">
+    <h2 class="welcome-title">Bienvenue, {{ data?.userName || '...' }} !</h2>
+    <div class="illustration">
+      <img src="assets/images/welcome.png" alt="Welcome illustration">
+    </div>
+    <h3 class="section-title">Complétez votre profil professionnel</h3>
+    <p class="section-text">
+      Merci de prendre quelques instants pour renseigner vos informations professionnelles.<br>
+      Ces données permettront aux patients et à l'équipe médicale de mieux vous connaître et de faciliter la gestion de votre activité.
+    </p>
+    <div class="navigation-buttons">
+      <button mat-raised-button class="next-btn" (click)="nextStep()">Suivant</button>
+    </div>
+  </div>
+
+  <div class="modal-content" *ngIf="currentStep === 2">
+    <form [formGroup]="doctorForm" class="doctor-form-grid">
+      <h2 class="welcome-title">Informations professionnelles</h2>
+      <div class="professional-illustration">
+        <img src="assets/images/welcome1.png" alt="Doctor illustration" />
+      </div>
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Spécialité</mat-label>
+          <mat-select formControlName="specialite">
+            <mat-option *ngFor="let spec of specialites" [value]="spec">{{ spec }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Ville</mat-label>
+          <mat-select formControlName="ville">
+            <mat-option *ngFor="let v of villes" [value]="v">{{ v }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Adresse du cabinet</mat-label>
+          <input matInput formControlName="cabinetAdresse" placeholder="Adresse du cabinet">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Numéro RPPS</mat-label>
+          <input matInput formControlName="rpps" placeholder="Numéro RPPS">
+        </mat-form-field>
+      </div>
+      <div class="form-row image-upload-row">
+        <div class="image-upload-card">
+          <label class="image-upload-label">Photo du cabinet ou du profil</label>
+          <div class="image-upload-preview" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Photo du cabinet ou du profil" />
+          </div>
+          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+        </div>
+      </div>
+      <div class="navigation-buttons">
+        <button mat-raised-button class="finish-btn" color="primary" (click)="finish()" [disabled]="doctorForm.invalid">Terminer</button>
+      </div>
+    </form>
+  </div>
+</div> 

@@ -1,0 +1,16 @@
+<div class="filter-bar" style="display: flex; gap: 20px; margin-bottom: 30px; align-items: center;">
+  <mat-form-field appearance="outline" style="min-width: 200px;">
+    <mat-label>Filtrer par ville</mat-label>
+    <mat-select [(ngModel)]="selectedVille">
+      <mat-option value="">Toutes les villes</mat-option>
+      <mat-option *ngFor="let ville of uniqueVilles" [value]="ville">{{ ville }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" style="min-width: 200px;">
+    <mat-label>Filtrer par spécialité</mat-label>
+    <mat-select [(ngModel)]="selectedSpecialite">
+      <mat-option value="">Toutes les spécialités</mat-option>
+      <mat-option *ngFor="let specialite of uniqueSpecialites" [value]="specialite">{{ specialite }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div> 
