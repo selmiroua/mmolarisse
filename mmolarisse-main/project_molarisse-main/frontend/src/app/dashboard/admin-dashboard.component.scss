@@ -178,7 +178,11 @@ $header-height: 70px;
   .header-right {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 16px;
+
+    .header-icon {
+      margin-right: 8px;
+    }
 
     .notification-btn {
       background: none;

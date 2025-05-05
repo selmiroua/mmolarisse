@@ -82,6 +82,11 @@ public class SecurityConfig {
                         // Patient endpoints
                         .requestMatchers("/api/patients/me/**").authenticated()
                         .requestMatchers("/api/patients/{patientId}/**").hasAnyRole("DOCTOR", "SECRETAIRE")
+                        // Explicit permissions for fiche endpoints
+                        .requestMatchers("/api/patients/{patientId}/fiche").hasAnyRole("DOCTOR", "SECRETAIRE")
+                        .requestMatchers("/api/patients/*/fiche").hasAnyRole("DOCTOR", "SECRETAIRE")
+                        // Messaging system endpoints
+                        .requestMatchers("/api/messages/**").authenticated()
                         // Other endpoints
                         .requestMatchers(HttpMethod.POST, "/api/appointments/book").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/appointments/patient").hasRole("PATIENT")
@@ -131,6 +136,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/cv/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/secretaries/unassigned").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.POST, "/api/users/doctor/assign-secretary/{secretaryId}").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/update-time-by-doctor/{appointmentId}").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/update-time-by-secretary/{appointmentId}").hasRole("SECRETAIRE")
                         .requestMatchers("/api/doctor-verifications/pending").hasRole("ADMIN")
                         .requestMatchers("/api/doctor-verifications/status/*").hasRole("ADMIN")
                         .requestMatchers("/api/doctor-verifications/check/*").authenticated()

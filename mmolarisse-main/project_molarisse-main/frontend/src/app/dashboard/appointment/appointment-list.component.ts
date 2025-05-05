@@ -49,7 +49,7 @@ import { ProfileService } from '../../profile/profile.service';
         Aucun rendez-vous trouvé.
       </div>
 
-      <table *ngIf="!loading && appointments.length > 0" mat-table [dataSource]="appointments" class="appointment-table">
+      <table *ngIf="!loading && appointments.length > 0" mat-table [dataSource]="displayedAppointments" class="appointment-table">
         <!-- Date Column -->
         <ng-container matColumnDef="appointmentDateTime">
           <th mat-header-cell *matHeaderCellDef>Date & Heure</th>
@@ -257,8 +257,9 @@ import { ProfileService } from '../../profile/profile.service';
 })
 export class AppointmentListComponent implements OnInit {
   @Input() userRole!: 'patient' | 'doctor' | 'secretaire';
-  @Input() limit?: number; // Limite optionnelle pour le nombre de rendez-vous à afficher
+  @Input() limit?: number;
   appointments: Appointment[] = [];
+  displayedAppointments: Appointment[] = [];
   loading = true;
   displayedColumns: string[] = ['appointmentDateTime', 'status', 'type', 'case', 'person', 'notes', 'actions'];
   title = 'Appointments';
@@ -297,7 +298,8 @@ export class AppointmentListComponent implements OnInit {
     if (this.userRole === 'patient') {
       this.appointmentService.getMyAppointments().subscribe({
         next: (data) => {
-          this.appointments = this.limitAppointments(data);
+          this.appointments = data;
+          this.updateDisplayedAppointments();
           this.loading = false;
         },
         error: (error) => {
@@ -309,7 +311,8 @@ export class AppointmentListComponent implements OnInit {
       console.log('Making request to:', `${this.appointmentService['apiUrl']}/my-doctor-appointments`);
       this.appointmentService.getMyDoctorAppointments().subscribe({
         next: (data) => {
-          this.appointments = this.limitAppointments(data);
+          this.appointments = data;
+          this.updateDisplayedAppointments();
           this.loading = false;
         },
         error: (error) => {
@@ -320,7 +323,8 @@ export class AppointmentListComponent implements OnInit {
     } else if (this.userRole === 'secretaire') {
       this.appointmentService.getMySecretaryAppointments().subscribe({
         next: (data) => {
-          this.appointments = this.limitAppointments(data);
+          this.appointments = data;
+          this.updateDisplayedAppointments();
           this.loading = false;
         },
         error: (error) => {
@@ -331,12 +335,12 @@ export class AppointmentListComponent implements OnInit {
     }
   }
 
-  // Méthode pour limiter le nombre de rendez-vous si une limite est définie
-  private limitAppointments(data: Appointment[]): Appointment[] {
-    if (this.limit && data.length > this.limit) {
-      return data.slice(0, this.limit);
+  private updateDisplayedAppointments(): void {
+    if (this.limit && this.appointments.length > this.limit) {
+      this.displayedAppointments = this.appointments.slice(0, this.limit);
+    } else {
+      this.displayedAppointments = this.appointments;
     }
-    return data;
   }
 
   formatDate(dateStr: string): string {

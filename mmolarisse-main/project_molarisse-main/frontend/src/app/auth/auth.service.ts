@@ -11,6 +11,7 @@ export interface User {
   nom: string;
   email: string;
   role: string;
+  profilePicturePath?: string;
 }
 
 @Injectable({

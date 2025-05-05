@@ -203,12 +203,15 @@ export class CvViewerDialogComponent implements OnInit {
       // If no CV path provided, use the test PDF for demo
       const filePath = this.data?.cvFilePath || existingPdfFile;
       
-      // Test URLs - with cvs directory and without directory prefix
-      this.testUrlWithPrefix = `${environment.apiUrl}/api/v1/api/users/cv/cvs/${filePath}?token=${token}`;
+      // Check if the filePath already includes 'cvs/'
+      const hasCvsPrefix = filePath.startsWith('cvs/');
+      const cvPath = hasCvsPrefix ? filePath : `cvs/${filePath}`;
+      
+      // Test URLs
+      this.testUrlWithPrefix = `${environment.apiUrl}/api/v1/api/users/cv/${cvPath}?token=${token}`;
       this.testUrlDirect = `${environment.apiUrl}/api/v1/api/users/cv/${filePath}?token=${token}`;
       
-      // Use the cvs subdirectory consistently
-      const cvPath = filePath.includes('/') ? filePath : `cvs/${filePath}`;
+      // Use correct API path for production
       this.originalUrl = `${environment.apiUrl}/api/v1/api/users/cv/${cvPath}?token=${token}`;
       console.log('Full CV URL:', this.originalUrl);
       

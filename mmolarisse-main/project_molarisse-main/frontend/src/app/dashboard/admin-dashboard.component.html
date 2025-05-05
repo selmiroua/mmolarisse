@@ -24,6 +24,10 @@
         <mat-icon>settings</mat-icon>
         <span>Paramètres</span>
       </a>
+      <a (click)="showMessaging()" [class.active]="activeSection === 'messaging'">
+        <mat-icon>chat</mat-icon>
+        <span>Messagerie</span>
+      </a>
     </div>
   </nav>
 
@@ -43,6 +47,7 @@
       </div>
 
       <div class="header-right">
+        <app-message-bell class="header-icon"></app-message-bell>
         <button class="notification-btn" (click)="toggleNotifications()">
           <mat-icon [matBadge]="notificationCount" [matBadgeHidden]="notificationCount === 0">notifications</mat-icon>
         </button>
@@ -183,6 +188,15 @@
       <div *ngIf="activeSection === 'settings'" class="settings-view">
         <h2>Paramètres</h2>
         <!-- Add settings content here -->
+      </div>
+      
+      <!-- Messaging View -->
+      <div *ngIf="activeSection === 'messaging'" class="messaging-view">
+        <div class="welcome-card">
+          <h2>Messagerie</h2>
+          <p>Communiquez avec les utilisateurs de la plateforme</p>
+        </div>
+        <app-messaging></app-messaging>
       </div>
     </div>
   </div>

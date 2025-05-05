@@ -78,7 +78,18 @@ import { Router } from '@angular/router';
     }
     
     .bell-button {
-      color: white;
+      color: #378392;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        color: #205a63;
+      }
+      
+      .mat-icon {
+        font-size: 24px;
+        height: 24px;
+        width: 24px;
+      }
     }
     
     ::ng-deep .notification-menu {

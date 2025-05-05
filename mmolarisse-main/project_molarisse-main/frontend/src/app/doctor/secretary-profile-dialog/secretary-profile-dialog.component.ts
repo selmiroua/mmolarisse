@@ -9,6 +9,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { User } from '../../core/models/user.model';
 import { DoctorApplication } from '../../core/models/doctor-application.model';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { CvViewerDialogComponent } from '../../shared/cv-viewer-dialog/cv-viewer-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 export interface SecretaryProfileData {
   application: DoctorApplication;
@@ -47,22 +49,35 @@ export class SecretaryProfileDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<SecretaryProfileDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: SecretaryProfileData,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private dialog: MatDialog
   ) {
     this.loadCV();
   }
 
   loadCV(): void {
     if (this.data.cvFilePath) {
-      const cvUrl = `/api/v1/users/cv/${this.data.cvFilePath}`;
+      const token = localStorage.getItem('access_token');
+      
+      // Check if the path already includes 'cvs/'
+      const cvFilePath = this.data.cvFilePath;
+      const hasCvsPrefix = cvFilePath.startsWith('cvs/');
+      const cvPath = hasCvsPrefix ? cvFilePath : `cvs/${cvFilePath}`;
+      
+      const cvUrl = `/api/v1/api/users/cv/${cvPath}?token=${token}`;
       this.cvUrl = this.sanitizer.bypassSecurityTrustResourceUrl(cvUrl);
     }
   }
 
   viewCV(): void {
-    if (this.data.hasCV && this.data.application.cvFilePath) {
-      const cvUrl = `/api/v1/users/cv/${this.data.application.cvFilePath}`;
-      window.open(cvUrl, '_blank');
+    if (this.data.cvFilePath) {
+      this.dialog.open(CvViewerDialogComponent, {
+        width: '800px',
+        height: '700px',
+        data: {
+          cvFilePath: this.data.cvFilePath
+        }
+      });
     }
   }
 

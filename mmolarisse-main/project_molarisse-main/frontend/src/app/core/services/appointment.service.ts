@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map, catchError, throwError, switchMap, retry, of } from 'rxjs';
+import { Observable, map, catchError, throwError, switchMap, retry, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ProfileService } from '../../profile/profile.service';
 import { jwtDecode } from 'jwt-decode';
@@ -631,5 +631,102 @@ export class AppointmentService {
         return throwError(() => new Error('Failed to update appointment details'));
       })
     );
+  }
+
+  updateAppointmentTimeByDoctor(appointmentId: number, newDateTime: string): Observable<Appointment> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('No authentication token found');
+      return throwError(() => new Error('No authentication token found'));
+    }
+    
+    // Make sure the date format is correct (without the 'Z' at the end)
+    if (newDateTime && newDateTime.endsWith('Z')) {
+      newDateTime = newDateTime.substring(0, 19); // Format: "2025-05-15T10:00:00"
+    }
+    
+    const headers = new HttpHeaders()
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'application/json');
+      
+    console.log('Headers for update appointment by doctor:', headers.keys());
+    console.log('Update payload:', { appointmentDateTime: newDateTime });
+    
+    return this.http.put<Appointment>(
+      `${this.apiUrl}/update-time-by-doctor/${appointmentId}`, 
+      { appointmentDateTime: newDateTime },
+      { headers }
+    ).pipe(
+      map(response => {
+        console.log('Update success response:', response);
+        return this.normalizeAppointment(response);
+      }),
+      catchError(error => {
+        console.error('Error updating appointment time', error);
+        console.error('Error details:', error.error);
+        return throwError(() => new Error('Unable to update appointment time: ' + (error.error?.message || error.error?.error || error.message || 'Unknown error')));
+      })
+    );
+  }
+
+  updateAppointmentTimeBySecretary(appointmentId: number, newDateTime: string): Observable<Appointment> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('No authentication token found');
+      return throwError(() => new Error('No authentication token found'));
+    }
+    
+    // Make sure the date format is correct (without the 'Z' at the end)
+    if (newDateTime && newDateTime.endsWith('Z')) {
+      newDateTime = newDateTime.substring(0, 19); // Format: "2025-05-15T10:00:00"
+    }
+    
+    const headers = new HttpHeaders()
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'application/json');
+      
+    console.log('Headers for update appointment by secretary:', headers.keys());
+    console.log('Update payload:', { appointmentDateTime: newDateTime });
+    
+    return this.http.put<Appointment>(
+      `${this.apiUrl}/update-time-by-secretary/${appointmentId}`, 
+      { appointmentDateTime: newDateTime },
+      { headers }
+    ).pipe(
+      map(response => {
+        console.log('Update success response:', response);
+        return this.normalizeAppointment(response);
+      }),
+      catchError(error => {
+        console.error('Error updating appointment time', error);
+        console.error('Error details:', error.error);
+        return throwError(() => new Error('Unable to update appointment time: ' + (error.error?.message || error.error?.error || error.message || 'Unknown error')));
+      })
+    );
+  }
+
+  // Get patient fiche associated with an appointment
+  getAppointmentFichePatient(appointmentId: number): Observable<any> {
+    const authToken = localStorage.getItem('access_token');
+    console.log(`Sending request to fetch fiche for appointment ID: ${appointmentId}`);
+    
+    return this.http.get<any>(`${this.apiUrl}/${appointmentId}/fiche-patient`, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      })
+    }).pipe(
+      tap(response => console.log('Received appointment fiche patient:', response)),
+      catchError(error => {
+        console.error('Error fetching appointment fiche patient:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Getter for apiUrl
+  getApiUrl(): string {
+    return this.apiUrl;
   }
 } 

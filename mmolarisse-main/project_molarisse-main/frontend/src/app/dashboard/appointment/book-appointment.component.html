@@ -13,4 +13,33 @@
       <mat-option *ngFor="let specialite of uniqueSpecialites" [value]="specialite">{{ specialite }}</mat-option>
     </mat-select>
   </mat-form-field>
+</div>
+
+<div class="doctor-list">
+  <div class="doctor-card" *ngFor="let doctor of filteredDoctors">
+    <div class="doctor-avatar">
+      <img [src]="doctor.profilePicturePath || 'assets/images/default-avatar.png'" [alt]="'Photo du médecin ' + doctor.nom + ' ' + doctor.prenom" />
+    </div>
+    <div class="top-row">
+      <div class="doctor-specialty">
+        {{ doctor.specialities && doctor.specialities.length > 0 ? doctor.specialities.join(', ') : 'Non spécifiée' }}
+      </div>
+      <div *ngIf="doctor.isAvailable" class="availability-badge">Disponible</div>
+    </div>
+    <div class="doctor-name">Dr. {{ doctor.prenom }} {{ doctor.nom }}</div>
+    <div class="info-row">
+      <div class="doctor-location" *ngIf="doctor.ville">
+        <mat-icon>location_on</mat-icon>
+        {{ doctor.ville }}
+      </div>
+      <div class="consultation-fee">
+        <span>Tarif</span>
+        <span class="fee-amount">{{ doctor.fee || 'N/A' }}DT</span>
+      </div>
+    </div>
+    <button class="book-button" (click)="openAppointmentDialog(doctor)">
+      <mat-icon>event</mat-icon>
+      Prendre RDV
+    </button>
+  </div>
 </div> 

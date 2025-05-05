@@ -48,7 +48,12 @@
         <span>Calendrier</span>
       </a>
 
-      
+      <a class="nav-link" (click)="showMessaging()" [class.active]="activeSection === 'messaging'">
+        <div class="nav-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <span>Messagerie</span>
+      </a>
 
       <a class="nav-link" (click)="showUnassignedSecretaries()" [class.active]="activeSection === 'unassigned-secretaries'" matTooltip="Secrétaires disponibles">
         <div class="nav-icon">
@@ -82,6 +87,9 @@
         </button>
         <div class="notifications">
           <app-notification-bell></app-notification-bell>
+        </div>
+        <div class="messaging">
+          <app-message-bell></app-message-bell>
         </div>
         <div class="staff-button" (click)="showMyStaff()" matTooltip="Mon équipe">
           <mat-icon>people</mat-icon>
@@ -181,12 +189,34 @@
       </div>
 
       <!-- Appointments View -->
-      <div *ngIf="activeSection === 'appointments'">
-        <app-doctor-secretary-view></app-doctor-secretary-view>
+      <div *ngIf="activeSection === 'appointments'" class="dashboard-section appointments-section">
+        <div class="section-header">
+          <h2>Gérer mes rendez-vous</h2>
+          <p>Consultez et gérez vos rendez-vous</p>
+        </div>
+        
+        <!-- Only show appointment list, not calendar -->
+        <div class="list-view">
+          <app-appointment-list 
+            [userRole]="'doctor'"
+            [limit]="20">
+          </app-appointment-list>
+          
+          <div class="view-more-container">
+            <button mat-flat-button color="primary" (click)="showCalendar()">
+              <mat-icon>calendar_today</mat-icon>
+              Voir le calendrier
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Calendar View -->
-      <div *ngIf="activeSection === 'calendar'">
+      <div *ngIf="activeSection === 'calendar'" class="calendar-section">
+        <div class="section-header">
+          <h2>Calendrier des Rendez-vous</h2>
+          <p>Visualisez tous les rendez-vous sur une vue calendrier</p>
+        </div>
         <app-appointment-calendar [userRole]="'doctor'"></app-appointment-calendar>
       </div>
 
@@ -203,6 +233,15 @@
       <!-- My Staff View -->
       <div *ngIf="activeSection === 'my-staff'">
         <app-assigned-secretaries></app-assigned-secretaries>
+      </div>
+
+      <!-- Messaging View -->
+      <div *ngIf="activeSection === 'messaging'" class="messaging-section">
+        <div class="section-header">
+          <h2>Messagerie</h2>
+          <p>Communiquez avec vos patients et collègues</p>
+        </div>
+        <app-messaging></app-messaging>
       </div>
 
       <!-- Settings View -->

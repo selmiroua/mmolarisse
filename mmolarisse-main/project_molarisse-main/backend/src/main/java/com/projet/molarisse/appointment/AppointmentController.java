@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import com.projet.molarisse.user.User;
+import com.projet.molarisse.user.SecretaryStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -437,5 +438,57 @@ public class AppointmentController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+    }
+
+    // For DOCTOR
+    @PutMapping("/update-time-by-doctor/{appointmentId}")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<Appointment> updateAppointmentTimeByDoctor(
+            @PathVariable Integer appointmentId,
+            @RequestBody Map<String, String> body,
+            Authentication authentication
+    ) {
+        User doctor = (User) authentication.getPrincipal();
+        Appointment appointment = appointmentService.findById(appointmentId);
+        if (appointment == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        LocalDateTime newTime = LocalDateTime.parse(body.get("appointmentDateTime"));
+        appointment.setAppointmentDateTime(newTime);
+        Appointment saved = appointmentService.save(appointment);
+        
+        // Send notification to patient
+        String doctorName = "Dr. " + doctor.getPrenom() + " " + doctor.getNom();
+        appointmentService.notifyAppointmentTimeUpdated(saved, doctorName);
+        
+        return ResponseEntity.ok(saved);
+    }
+
+    // For SECRETARY
+    @PutMapping("/update-time-by-secretary/{appointmentId}")
+    @PreAuthorize("hasRole('SECRETAIRE')")
+    public ResponseEntity<Appointment> updateAppointmentTimeBySecretary(
+            @PathVariable Integer appointmentId,
+            @RequestBody Map<String, String> body,
+            Authentication authentication
+    ) {
+        User secretary = (User) authentication.getPrincipal();
+        Appointment appointment = appointmentService.findById(appointmentId);
+        if (appointment == null ||
+            secretary.getAssignedDoctor() == null ||
+            !secretary.getAssignedDoctor().getId().equals(appointment.getDoctor().getId()) ||
+            secretary.getSecretaryStatus() != SecretaryStatus.APPROVED) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        LocalDateTime newTime = LocalDateTime.parse(body.get("appointmentDateTime"));
+        appointment.setAppointmentDateTime(newTime);
+        Appointment saved = appointmentService.save(appointment);
+        
+        // Send notification to patient
+        String doctorName = "Dr. " + appointment.getDoctor().getPrenom() + " " + appointment.getDoctor().getNom();
+        String secretaryName = secretary.getPrenom() + " " + secretary.getNom() + " (secrétaire de " + doctorName + ")";
+        appointmentService.notifyAppointmentTimeUpdated(saved, secretaryName);
+        
+        return ResponseEntity.ok(saved);
     }
 }

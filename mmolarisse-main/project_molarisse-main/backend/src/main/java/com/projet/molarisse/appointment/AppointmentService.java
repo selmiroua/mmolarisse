@@ -417,4 +417,30 @@ public class AppointmentService {
                 return status.toString();
         }
     }
+
+    /**
+     * Creates a notification for the patient when their appointment time is updated
+     * @param appointment The updated appointment
+     * @param updatedBy User role who updated the appointment (doctor or secretary)
+     */
+    public void notifyAppointmentTimeUpdated(Appointment appointment, String updatedBy) {
+        User patient = appointment.getPatient();
+        
+        if (patient != null) {
+            String formattedDate = appointment.getAppointmentDateTime()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm"));
+            
+            String message = String.format("Votre rendez-vous a été reprogrammé par %s pour le %s", 
+                updatedBy, formattedDate);
+            
+            String link = "/dashboard/patient?section=appointments";
+            
+            notificationService.createNotification(
+                patient, 
+                message,
+                NotificationType.APPOINTMENT_UPDATED,
+                link
+            );
+        }
+    }
 }

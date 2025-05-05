@@ -15,7 +15,7 @@ import { AppointmentTabsComponent } from './appointment/appointment-tabs.compone
 import { AuthService } from '../core/services/auth.service';
 import { ProfileComponent } from '../profile/profile.component';
 import { ValidateAccountComponent } from '../validate-account/validate-account.component';
-import { AppointmentCalendarComponent } from './appointment/appointment-calendar.component';
+import { AppointmentCalendarComponent } from '../appointment-calendar/appointment-calendar.component';
 import { SecretaryApplicationsComponent } from '../doctor/secretary-applications/secretary-applications.component';
 import { DoctorVerificationComponent } from '../doctor/doctor-verification/doctor-verification.component';
 import { UserService } from '../core/services/user.service';
@@ -35,6 +35,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { DoctorWelcomeDialogComponent } from '../doctor/doctor-welcome-dialog/doctor-welcome-dialog.component';
+import { AppointmentDetailsDialogComponent } from '../appointment-details-dialog/appointment-details-dialog.component';
+import { MessageBellComponent } from '../shared/message-bell/message-bell.component';
+import { MessagingComponent } from '../messaging/messaging.component';
 
 interface User {
   firstName: string;
@@ -81,7 +84,10 @@ interface DecodedToken {
     SecretaryRequestsComponent,
     UnassignedSecretariesComponent,
     AssignedSecretariesComponent,
-    DoctorSecretaryViewComponent
+    DoctorSecretaryViewComponent,
+    AppointmentDetailsDialogComponent,
+    MessageBellComponent,
+    MessagingComponent
   ],
   templateUrl: './doctor-dashboard.component.html',
   styleUrls: ['./doctor-dashboard.component.scss']
@@ -221,6 +227,10 @@ export class DoctorDashboardComponent implements OnInit {
 
   showCalendar() {
     this.activeSection = 'calendar';
+  }
+
+  showMessaging() {
+    this.activeSection = 'messaging';
   }
 
   showSecretaryApplications() {

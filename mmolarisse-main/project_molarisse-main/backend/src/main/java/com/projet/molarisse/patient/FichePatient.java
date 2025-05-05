@@ -80,14 +80,11 @@ public class FichePatient {
     @Column(name = "document_size")
     private Long documentSize;
 
-    @Column(name = "creation_date", nullable = false, updatable = false)
-    @CreatedDate
-    private LocalDateTime creationDate;
-
     @Column(name = "updated_at")
     private LocalDate updatedAt;
 
     @Column(name = "created_at")
+    @CreatedDate
     private LocalDate createdAt;
 
     @Column(name = "document_upload_date")
@@ -115,9 +112,6 @@ public class FichePatient {
     protected void onCreate() {
         createdAt = LocalDate.now();
         updatedAt = LocalDate.now();
-        if (creationDate == null) {
-            creationDate = LocalDateTime.now();
-        }
         if (documents == null) {
             documents = new ArrayList<>();
         }

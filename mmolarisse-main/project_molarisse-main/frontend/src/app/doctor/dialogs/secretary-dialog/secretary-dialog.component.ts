@@ -232,7 +232,14 @@ export class SecretaryDialogComponent {
     if (!this.data?.secretary?.cvFilePath) {
       return '';
     }
-    return `${this.apiUrl}/api/v1/api/users/cv/${this.data.secretary.cvFilePath}`;
+    const token = localStorage.getItem('access_token');
+    
+    // Check if the path already includes 'cvs/'
+    const cvFilePath = this.data.secretary.cvFilePath;
+    const hasCvsPrefix = cvFilePath.startsWith('cvs/');
+    const cvPath = hasCvsPrefix ? cvFilePath : `cvs/${cvFilePath}`;
+    
+    return `${this.apiUrl}/api/v1/api/users/cv/${cvPath}?token=${token}`;
   }
   
   handleImageError(event: Event): void {

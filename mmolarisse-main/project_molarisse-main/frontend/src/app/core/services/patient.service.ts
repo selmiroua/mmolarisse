@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators';
+import { catchError, tap, map, retry, delay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface FichePatient {
@@ -41,9 +41,16 @@ export interface PatientDocument {
   providedIn: 'root'
 })
 export class PatientService {
-  private apiUrl = `${environment.apiUrl}/api/v1/api/patients`;
+  private apiUrl = `${environment.apiUrl}/api/patients`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    console.log('PatientService initialized with URL:', this.apiUrl);
+  }
+
+  // Getter for apiUrl
+  getApiUrl(): string {
+    return this.apiUrl;
+  }
 
   // Get current patient's medical information
   getCurrentPatientFiche(): Observable<FichePatient> {
@@ -91,7 +98,17 @@ export class PatientService {
 
   // Get patient's medical information by ID (for doctors/secretaries)
   getPatientFiche(patientId: number): Observable<FichePatient> {
-    return this.http.get<FichePatient>(`${this.apiUrl}/${patientId}/fiche`).pipe(
+    const authToken = localStorage.getItem('access_token');
+    console.log(`Sending request to: ${this.apiUrl}/${patientId}/fiche with token: ${authToken ? 'Present' : 'Missing'}`);
+    
+    return this.http.get<FichePatient>(`${this.apiUrl}/${patientId}/fiche`, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      })
+    }).pipe(
+      retry({ count: 2, delay: 1000 }), // Retry twice with 1 second delay
       tap(response => console.log('Received patient fiche:', response)),
       catchError(error => {
         console.error('Error fetching patient fiche:', error);

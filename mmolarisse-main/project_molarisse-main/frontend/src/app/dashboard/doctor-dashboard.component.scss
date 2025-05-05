@@ -677,6 +677,45 @@
   }
 }
 
+.calendar-section {
+  height: calc(100vh - 180px);
+  margin-bottom: 20px;
+  overflow: hidden;
+  
+  app-appointment-calendar {
+    height: 100%;
+    display: block;
+  }
+}
+
+.appointments-section {
+  margin-bottom: 20px;
+  
+  .list-view {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    
+    .view-more-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #f0f0f0;
+      
+      button {
+        padding: 8px 20px;
+        border-radius: 8px;
+        
+        mat-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 1024px) {
   .dashboard-header {
     left: 80px;
@@ -787,4 +826,12 @@
       transform: scale(1.2);
     }
   }
+}
+
+.notifications {
+  margin-right: 15px;
+}
+
+.messaging {
+  margin-right: 15px;
 }

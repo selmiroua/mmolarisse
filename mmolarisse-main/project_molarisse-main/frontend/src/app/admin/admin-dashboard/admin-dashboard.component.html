@@ -27,6 +27,9 @@
         <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
       </button>
       <span>Administration Molarisse</span>
+      <span class="spacer"></span>
+      <app-message-bell></app-message-bell>
+      <app-notification-bell *ngIf="notificationBellEnabled"></app-notification-bell>
     </mat-toolbar>
     <!-- Main content -->
     <router-outlet></router-outlet>

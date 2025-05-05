@@ -1,0 +1,225 @@
+.appointments-container {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  .appointments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0;
+      color: #333;
+      font-size: 24px;
+    }
+
+    .search-bar {
+      position: relative;
+      width: 300px;
+
+      .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 10px 10px 10px 40px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #378392;
+          box-shadow: 0 0 0 2px rgba(55, 131, 146, 0.1);
+        }
+      }
+    }
+  }
+
+  .appointments-content {
+    min-height: 400px;
+    position: relative;
+
+    .loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .error-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #d32f2f;
+      text-align: center;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 16px;
+      }
+    }
+
+    .appointments-list {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+
+      .appointment-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #eee;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .appointment-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 15px;
+
+          .doctor-info {
+            h3 {
+              margin: 0 0 5px 0;
+              font-size: 18px;
+              color: #333;
+            }
+
+            .appointment-type {
+              font-size: 14px;
+              color: #666;
+              background: #f5f5f5;
+              padding: 4px 8px;
+              border-radius: 4px;
+            }
+          }
+
+          .appointment-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+
+            &.status-pending {
+              background: #fff3e0;
+              color: #f57c00;
+            }
+
+            &.status-accepted {
+              background: #e8f5e9;
+              color: #2e7d32;
+            }
+
+            &.status-completed {
+              background: #e3f2fd;
+              color: #1976d2;
+            }
+
+            &.status-cancelled {
+              background: #ffebee;
+              color: #c62828;
+            }
+          }
+        }
+
+        .appointment-details {
+          margin-bottom: 15px;
+
+          .detail-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+              margin-right: 8px;
+              color: #378392;
+            }
+          }
+        }
+
+        .appointment-actions {
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+
+          button {
+            min-width: 100px;
+          }
+        }
+      }
+    }
+
+    .no-appointments {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #666;
+      text-align: center;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        color: #378392;
+      }
+
+      p {
+        margin: 0;
+        font-size: 16px;
+      }
+    }
+  }
+}
+
+// Material tabs customization
+::ng-deep {
+  .mat-mdc-tab-group {
+    .mat-mdc-tab-header {
+      margin-bottom: 20px;
+    }
+
+    .mat-mdc-tab {
+      min-width: 120px;
+      padding: 0 16px;
+      height: 48px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .mat-mdc-tab-body-content {
+      overflow: visible;
+    }
+  }
+} 

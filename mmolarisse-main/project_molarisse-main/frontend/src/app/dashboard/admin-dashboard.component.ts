@@ -18,6 +18,8 @@ import { ProfileComponent } from '../profile/profile.component';
 import { DoctorVerificationsAdminComponent } from '../admin/doctor-verifications-admin/doctor-verifications-admin.component';
 import { AdminService } from '../services/admin.service';
 import { DoctorService, SecretaryRequest } from '../services/doctor.service';
+import { MessageBellComponent } from '../shared/message-bell/message-bell.component';
+import { MessagingComponent } from '../messaging/messaging.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -37,7 +39,9 @@ import { DoctorService, SecretaryRequest } from '../services/doctor.service';
     MatSnackBarModule,
     FormsModule,
     ProfileComponent,
-    DoctorVerificationsAdminComponent
+    DoctorVerificationsAdminComponent,
+    MessageBellComponent,
+    MessagingComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.scss']
@@ -113,6 +117,10 @@ export class AdminDashboardComponent implements OnInit {
   showSettings(): void {
     this.activeSection = 'settings';
     this.isProfileDropdownOpen = false;
+  }
+
+  showMessaging(): void {
+    this.activeSection = 'messaging';
   }
 
   toggleMenu(): void {

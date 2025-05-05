@@ -1,5 +1,5 @@
 import { Component, OnInit, HostListener, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { CommonModule } from '@angular/common';
@@ -10,10 +10,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { AppointmentListComponent } from './appointment/appointment-list.component';
 import { AppointmentTabsComponent } from './appointment/appointment-tabs.component';
-import { AppointmentCalendarComponent } from './appointment/appointment-calendar.component';
+import { AppointmentCalendarComponent } from '../appointment-calendar/appointment-calendar.component';
 import { ProfileComponent } from '../profile/profile.component';
 import { ValidateAccountComponent } from '../validate-account/validate-account.component';
 import { NotificationBellComponent } from './shared/notification-bell/notification-bell.component';
+import { MessageBellComponent } from '../shared/message-bell/message-bell.component';
 import { DoctorApplicationComponent } from '../secretary/doctor-application/doctor-application.component';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { UserService } from '../core/services/user.service';
@@ -25,9 +26,9 @@ import { VerifiedDoctorsComponent } from '../secretary/verified-doctors/verified
 import { ProfileService } from '../profile/profile.service';
 import { environment } from '../../environments/environment';
 import { filter } from 'rxjs/operators';
-import { NavigationEnd } from '@angular/router';
 import { AppointmentService } from '../core/services/appointment.service';
 import { DirectAppointmentsComponent } from './appointment/direct-appointments.component';
+import { MessagingComponent } from '../messaging/messaging.component';
 
 @Component({
   selector: 'app-secretaire-dashboard',
@@ -49,8 +50,10 @@ import { DirectAppointmentsComponent } from './appointment/direct-appointments.c
     DoctorApplicationComponent,
     VerifiedDoctorsComponent,
     NotificationBellComponent,
+    MessageBellComponent,
     ValidateAccountComponent,
-    DirectAppointmentsComponent
+    DirectAppointmentsComponent,
+    MessagingComponent
   ],
   templateUrl: './secretaire-dashboard.component.html',
   styleUrls: ['./secretaire-dashboard.component.scss']
@@ -64,6 +67,8 @@ export class SecretaireDashboardComponent implements OnInit, AfterViewInit {
   secretaryName = '';
   isProfileDropdownOpen = false;
   showFallbackAppointments = false;
+  isBaseRoute = true;
+  isFullscreen: boolean = false;
 
   @ViewChild(AppointmentTabsComponent) appointmentTabsComponent: AppointmentTabsComponent | undefined;
 
@@ -77,33 +82,41 @@ export class SecretaireDashboardComponent implements OnInit, AfterViewInit {
     private profileService: ProfileService,
     private appointmentService: AppointmentService
   ) {
-    // No need to check assignment status since we're showing all items
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.isBaseRoute = event.url === '/dashboard/secretary';
+    });
   }
 
   ngOnInit(): void {
     console.clear(); // Clear console for fresh debugging
     console.log('Initializing SecretaireDashboardComponent');
     
-    // If the URL has a specific section, use that, otherwise default to dashboard
-    const path = this.router.url.split('/').pop();
-    if (path) {
-      switch (path) {
-        case 'profile':
-          this.activeSection = 'profile';
-          break;
-        case 'appointments':
-          this.activeSection = 'appointments';
-          break;
-        case 'calendar':
-          this.activeSection = 'calendar';
-          break;
-        case 'doctor-application':
-          this.activeSection = 'doctor-application';
-          break;
-        default:
-          this.activeSection = 'dashboard';
+    // Check for query parameters
+    this.router.routerState.root.queryParams.subscribe(params => {
+      if (params['section']) {
+        switch (params['section']) {
+          case 'profile':
+            this.activeSection = 'profile';
+            break;
+          case 'appointments':
+            this.activeSection = 'appointments';
+            break;
+          case 'calendar':
+            this.activeSection = 'calendar';
+            break;
+          case 'doctor-application':
+            this.activeSection = 'doctor-application';
+            break;
+          case 'messaging':
+            this.activeSection = 'messaging';
+            break;
+          default:
+            // Keep default value
+        }
       }
-    }
+    });
     
     console.log('Initial active section:', this.activeSection);
     
@@ -187,11 +200,16 @@ export class SecretaireDashboardComponent implements OnInit, AfterViewInit {
 
   showDashboard(): void {
     this.activeSection = 'dashboard';
+    if (this.isBaseRoute) {
+      this.router.navigate(['/dashboard/secretary']);
+    }
   }
 
   showProfile(): void {
     this.activeSection = 'profile';
-    this.isProfileDropdownOpen = false;
+    if (this.isBaseRoute) {
+      this.router.navigate(['/dashboard/secretary'], { queryParams: { section: 'profile' } });
+    }
   }
 
   showValidateAccount(): void {
@@ -201,7 +219,9 @@ export class SecretaireDashboardComponent implements OnInit, AfterViewInit {
   showAppointments(): void {
     console.log('Showing appointments section');
     this.activeSection = 'appointments';
-    // No need for the complex refresh logic anymore since we have a direct component
+    if (this.isBaseRoute) {
+      this.router.navigate(['/dashboard/secretary'], { queryParams: { section: 'appointments' } });
+    }
   }
 
   showCalendar(): void {
@@ -327,5 +347,28 @@ export class SecretaireDashboardComponent implements OnInit, AfterViewInit {
         this.showFallbackAppointments = true;
       }
     });
+  }
+
+  toggleFullscreen(): void {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      this.isFullscreen = true;
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        this.isFullscreen = false;
+      }
+    }
+  }
+
+  toggleProfileDropdown(): void {
+    this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+  }
+
+  showMessaging(): void {
+    this.activeSection = 'messaging';
+    if (this.isBaseRoute) {
+      this.router.navigate(['/dashboard/secretary'], { queryParams: { section: 'messaging' } });
+    }
   }
 }

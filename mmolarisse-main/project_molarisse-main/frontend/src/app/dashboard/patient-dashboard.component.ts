@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
+import { AuthService, User } from '../auth/auth.service';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -11,6 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProfileWrapperComponent } from '../profile-wrapper/profile-wrapper.component';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 import { AppointmentListComponent } from '../appointment-list/appointment-list.component';
@@ -23,7 +24,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { WelcomeModalComponent } from '../shared/components/welcome-modal/welcome-modal.component';
 import { PatientService } from '../core/services/patient.service';
-
+import { PatientAppointmentsComponent } from './appointment/patient-appointments.component';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { MessageBellComponent } from '../shared/message-bell/message-bell.component';
+import { MessagingComponent } from '../messaging/messaging.component';
 
 @Component({
   selector: 'app-patient-dashboard',
@@ -40,24 +44,37 @@ import { PatientService } from '../core/services/patient.service';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
+    MatTooltipModule,
     ProfileWrapperComponent, 
     NotificationBellComponent, 
+    MessageBellComponent,
     AppointmentListComponent,
     AppointmentTabsComponent,
     ProfileComponent, 
     ValidateAccountComponent, 
     BookAppointmentComponent,
     WelcomeModalComponent,
-    AppointmentFormDialogComponent
-  ]
+    AppointmentFormDialogComponent,
+    PatientAppointmentsComponent,
+    MessagingComponent
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class PatientDashboardComponent implements OnInit {
   isBaseRoute: boolean = true;
-  isMenuOpen: boolean = false;
+  isMenuOpen: boolean = true;
   activeSection: string = 'dashboard';
   appointments: Appointment[] = [];
   loading: boolean = false;
   patientName: string = '';
+  profileImage: string = 'assets/images/default-avatar.png';
+  isProfileDropdownOpen: boolean = false;
+  isFullscreen: boolean = false;
+  
+  // Stats properties
+  todayAppointments: number = 0;
+  pendingAppointments: number = 0;
+  totalAppointments: number = 0;
   
   // New properties for appointments handling
   appointmentsLoading: boolean = false;
@@ -104,6 +121,7 @@ export class PatientDashboardComponent implements OnInit {
     this.authService.getCurrentUser().subscribe({
       next: (user) => {
         this.patientName = user.prenom + ' ' + user.nom;
+        this.profileImage = user.profilePicturePath || 'assets/images/default-avatar.png';
         
         // Then check if they have a fiche
         this.patientService.getCurrentPatientFiche().subscribe({
@@ -141,6 +159,13 @@ export class PatientDashboardComponent implements OnInit {
         console.error('Failed to fetch user info', err);
       }
     });
+
+    // Load user profile
+    this.authService.getCurrentUser().subscribe(user => {
+      if (user) {
+        this.profileImage = user.profilePicturePath || 'assets/images/default-avatar.png';
+      }
+    });
   }
 
   loadAppointments(): void {
@@ -152,21 +177,21 @@ export class PatientDashboardComponent implements OnInit {
         console.log('Successfully fetched appointments:', appointments);
         this.appointments = appointments;
         
-        // Log the doctor object structure in detail
-        if (appointments.length > 0 && appointments[0].doctor) {
-          console.log('DOCTOR OBJECT STRUCTURE (detailed):');
-          console.log(JSON.stringify(appointments[0].doctor, null, 2));
-          
-          // If doctor has userProfile, log it
-          if (appointments[0].doctor.userProfile) {
-            console.log('Doctor userProfile:', appointments[0].doctor.userProfile);
-          }
-          
-          // If doctor has user, log it
-          if (appointments[0].doctor.user) {
-            console.log('Doctor user:', appointments[0].doctor.user);
-          }
-        }
+        // Calculate stats
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        this.todayAppointments = appointments.filter(apt => {
+          const aptDate = new Date(apt.appointmentDateTime);
+          aptDate.setHours(0, 0, 0, 0);
+          return aptDate.getTime() === today.getTime();
+        }).length;
+        
+        this.pendingAppointments = appointments.filter(apt => 
+          apt.status === AppointmentStatus.PENDING || apt.status === AppointmentStatus.ACCEPTED
+        ).length;
+        
+        this.totalAppointments = appointments.length;
         
         this.loading = false;
       },
@@ -349,6 +374,10 @@ export class PatientDashboardComponent implements OnInit {
     this.router.navigate([], { queryParams: { section: 'book-appointment' }, queryParamsHandling: 'merge' });
   }
 
+  showMessaging(): void {
+    this.activeSection = 'messaging';
+  }
+
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/auth/login']);
@@ -502,5 +531,29 @@ export class PatientDashboardComponent implements OnInit {
     if (!firstName && !lastName) return 'Dr.';
     
     return `Dr. ${lastName} ${firstName}`.trim();
+  }
+
+  toggleFullscreen(): void {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      this.isFullscreen = true;
+    } else {
+      document.exitFullscreen();
+      this.isFullscreen = false;
+    }
+  }
+
+  toggleProfileDropdown(): void {
+    this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+  }
+
+  showSettings(): void {
+    // Implement settings view
+    console.log('Show settings');
+  }
+
+  showNotifications(): void {
+    // Implement notifications view
+    console.log('Show notifications');
   }
 }
