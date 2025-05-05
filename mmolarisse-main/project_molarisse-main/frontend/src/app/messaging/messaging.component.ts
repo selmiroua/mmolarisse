@@ -32,7 +32,7 @@ import { UserSearchComponent } from './user-search/user-search.component';
         <div class="conversation-sidebar">
           <mat-tab-group>
             <mat-tab label="Conversations">
-              <app-conversation-list (click)="onConversationListClick($event)"></app-conversation-list>
+              <app-conversation-list (conversationSelected)="onConversationStarted($event)"></app-conversation-list>
             </mat-tab>
             <mat-tab label="Collègues">
               <app-user-search (conversationStarted)="onConversationStarted($event)"></app-user-search>
@@ -159,20 +159,6 @@ export class MessagingComponent implements OnInit {
   // Handle conversation selection from UserSearchComponent
   onConversationStarted(userId: number): void {
     this.selectedUserId = userId;
-  }
-  
-  // Handle click events on conversation list
-  onConversationListClick(event: MouseEvent): void {
-    // Find the closest element with data-partner-id attribute
-    const target = event.target as HTMLElement;
-    const conversationItem = target.closest('[data-partner-id]');
-    
-    if (conversationItem) {
-      const partnerId = conversationItem.getAttribute('data-partner-id');
-      if (partnerId) {
-        this.selectedUserId = parseInt(partnerId, 10);
-        event.preventDefault();
-      }
-    }
+    // Don't navigate, just update the selected user
   }
 } 

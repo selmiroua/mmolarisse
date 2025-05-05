@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessagingService, Conversation } from '../../core/services/messaging.service';
 import { Subscription, interval } from 'rxjs';
@@ -11,6 +11,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-conversation-list',
@@ -39,35 +40,35 @@ import { RouterModule } from '@angular/router';
       </div>
       
       <div *ngIf="!loading && conversations.length === 0" class="empty-state">
-        <mat-icon>chat</mat-icon>
+        <mat-icon>forum</mat-icon>
         <p>Aucune conversation</p>
-        <p class="empty-subtitle">Vous n'avez pas encore de messages</p>
+        <p class="empty-subtitle">Commencez une nouvelle conversation avec un utilisateur</p>
       </div>
       
-      <mat-nav-list *ngIf="!loading && conversations.length > 0">
-        <a mat-list-item 
-           *ngFor="let conversation of conversations" 
+      <div *ngIf="!loading && conversations.length > 0" class="conversation-list">
+        <div *ngFor="let conversation of conversations"
+           (click)="selectConversation(conversation.partnerId)"
            [attr.data-partner-id]="conversation.partnerId"
            class="conversation-item"
            [class.unread]="conversation.unreadCount > 0">
           
-          <div class="conversation-avatar" matListItemAvatar>
-            <div *ngIf="!conversation.profilePicture" class="avatar-placeholder">
+          <div class="conversation-avatar">
+            <div class="user-initial" *ngIf="!conversation.profilePicture">
               {{ getInitials(conversation.partnerName) }}
             </div>
-            <img *ngIf="conversation.profilePicture" [src]="conversation.profilePicture" alt="{{ conversation.partnerName }}">
+            <img *ngIf="conversation.profilePicture" [src]="getProfileImageUrl(conversation.profilePicture)" alt="{{ conversation.partnerName }}">
             
             <div *ngIf="conversation.unreadCount > 0" class="unread-badge">
               {{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}
             </div>
           </div>
           
-          <div matListItemTitle class="conversation-title">
+          <div class="conversation-title">
             <span>{{ conversation.partnerName }}</span>
             <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
           </div>
           
-          <div matListItemLine class="conversation-subtitle">
+          <div class="conversation-subtitle">
             <span *ngIf="conversation.isLastMessageMine" class="sent-indicator">
               <mat-icon>send</mat-icon>
             </span>
@@ -79,8 +80,8 @@ import { RouterModule } from '@angular/router';
           <div class="conversation-role-badge">
             {{ getRoleBadge(conversation.partnerRole) }}
           </div>
-        </a>
-      </mat-nav-list>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -138,9 +139,23 @@ import { RouterModule } from '@angular/router';
       margin-top: 8px !important;
     }
     
+    .conversation-list {
+      overflow-y: auto;
+      flex-grow: 1;
+      height: calc(100% - 48px);
+    }
+    
     .conversation-item {
       position: relative;
       border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 16px;
+    }
+    
+    .conversation-item:hover {
+      background-color: #f5f5f5;
     }
     
     .conversation-item.unread {
@@ -151,7 +166,7 @@ import { RouterModule } from '@angular/router';
       position: relative;
     }
     
-    .avatar-placeholder {
+    .user-initial {
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -160,7 +175,9 @@ import { RouterModule } from '@angular/router';
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     
     .conversation-avatar img {
@@ -168,6 +185,8 @@ import { RouterModule } from '@angular/router';
       height: 40px;
       border-radius: 50%;
       object-fit: cover;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     
     .unread-badge {
@@ -247,9 +266,11 @@ export class ConversationListComponent implements OnInit, OnDestroy {
   loading = true;
   private refreshSubscription: Subscription | undefined;
   
+  @Output() conversationSelected = new EventEmitter<number>();
+  
   constructor(
     private messagingService: MessagingService,
-    private router: Router
+    public router: Router
   ) {}
   
   ngOnInit(): void {
@@ -342,5 +363,26 @@ export class ConversationListComponent implements OnInit, OnDestroy {
       case 'patient': return 'Patient';
       default: return role;
     }
+  }
+  
+  getProfileImageUrl(profilePicturePath?: string): string {
+    if (profilePicturePath) {
+      // Check if it's already a full URL
+      if (profilePicturePath.startsWith('http')) {
+        return profilePicturePath;
+      }
+      try {
+        const timestamp = new Date().getTime();
+        return `${environment.apiUrl}/api/v1/api/users/profile/picture/${profilePicturePath}?t=${timestamp}`;
+      } catch (error) {
+        console.error('Error generating profile picture URL:', error);
+        return 'assets/images/default-avatar.png';
+      }
+    }
+    return 'assets/images/default-avatar.png';
+  }
+  
+  selectConversation(partnerId: number): void {
+    this.conversationSelected.emit(partnerId);
   }
 } 

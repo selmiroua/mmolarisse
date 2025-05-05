@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MessagingService, Message } from '../../core/services/messaging.service';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-conversation-detail',
@@ -35,7 +36,7 @@ import { switchMap } from 'rxjs/operators';
           <div *ngIf="!partnerProfilePicture" class="avatar-placeholder">
             {{ getInitials(partnerName) }}
           </div>
-          <img *ngIf="partnerProfilePicture" [src]="partnerProfilePicture" alt="{{ partnerName }}">
+          <img *ngIf="partnerProfilePicture" [src]="partnerProfilePicture" alt="{{ partnerName }}" (error)="handleImageError($event)">
           <div class="partner-info">
             <h2>{{ partnerName }}</h2>
             <span class="partner-role">{{ getRoleBadge(partnerRole) }}</span>
@@ -64,13 +65,8 @@ import { switchMap } from 'rxjs/operators';
                [class.first-of-group]="isFirstMessageOfGroup(message, i)"
                [class.last-of-group]="isLastMessageOfGroup(message, i)">
             
-            <div class="message-avatar" *ngIf="isFirstMessageOfGroup(message, i) && !message.isMine">
-              <div *ngIf="!message.senderProfilePicture" class="avatar-placeholder small">
-                {{ getInitials(message.senderName) }}
-              </div>
-              <img *ngIf="message.senderProfilePicture" [src]="message.senderProfilePicture" alt="{{ message.senderName }}">
-            </div>
-            <div class="message-spacer" *ngIf="!isFirstMessageOfGroup(message, i) || message.isMine"></div>
+            <!-- Skip showing avatars completely -->
+            <div class="message-spacer"></div>
             
             <div class="message-bubble" [class.my-bubble]="message.isMine">
               <div class="message-content">{{ message.content }}</div>
@@ -127,8 +123,8 @@ import { switchMap } from 'rxjs/operators';
     }
     
     .avatar-placeholder {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background-color: #378392;
       color: white;
@@ -137,20 +133,25 @@ import { switchMap } from 'rxjs/operators';
       justify-content: center;
       font-weight: 500;
       margin-right: 12px;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     
     .avatar-placeholder.small {
       width: 32px;
       height: 32px;
       font-size: 12px;
+      margin-right: 8px;
     }
     
     .conversation-partner img {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       object-fit: cover;
       margin-right: 12px;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     
     .partner-info {
@@ -219,7 +220,7 @@ import { switchMap } from 'rxjs/operators';
     
     .message-wrapper {
       display: flex;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
     
     .message-wrapper.my-message {
@@ -234,18 +235,13 @@ import { switchMap } from 'rxjs/operators';
       margin-bottom: 16px;
     }
     
-    .message-avatar {
-      margin-right: 8px;
-      align-self: flex-end;
-    }
-    
     .message-spacer {
-      width: 40px;
+      width: 16px;
     }
     
     .message-bubble {
-      max-width: 70%;
-      padding: 8px 12px;
+      max-width: 75%;
+      padding: 10px 14px;
       border-radius: 18px;
       background-color: #fff;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -262,6 +258,13 @@ import { switchMap } from 'rxjs/operators';
       font-size: 14px;
       margin-bottom: 2px;
       word-wrap: break-word;
+    }
+    
+    .message-content img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin: 4px 0;
     }
     
     .message-time {
@@ -332,12 +335,16 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   ) {}
   
   ngOnInit(): void {
+    console.log('ConversationDetail - ngOnInit called with userId:', this.userId);
     // If userId is not provided via Input, try to get it from the route
     if (!this.userId) {
+      console.log('ConversationDetail - No userId provided as input, checking route');
       this.route.paramMap.subscribe(params => {
         const idParam = params.get('id');
+        console.log('ConversationDetail - Route id param:', idParam);
         if (idParam) {
           this.partnerId = parseInt(idParam, 10);
+          console.log('ConversationDetail - Setting partnerId from route:', this.partnerId);
           this.loadConversation();
           
           // Set up automatic refresh every 10 seconds
@@ -345,6 +352,7 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
         }
       });
     } else {
+      console.log('ConversationDetail - Using userId from input:', this.userId);
       this.partnerId = this.userId;
       this.loadConversation();
       
@@ -355,9 +363,12 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   
   ngOnChanges(changes: SimpleChanges): void {
     // Respond to changes in the userId Input
-    if (changes['userId'] && !changes['userId'].firstChange) {
+    console.log('ConversationDetail - ngOnChanges called with userId:', this.userId, 'changes:', changes);
+    if (changes['userId']) {
+      console.log('ConversationDetail - userId changed to:', changes['userId'].currentValue);
       if (this.userId) {
         this.partnerId = this.userId;
+        console.log('ConversationDetail - Setting partnerId from userId change:', this.partnerId);
         this.loadConversation();
         
         // Make sure auto-refresh is set up
@@ -390,9 +401,22 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   }
   
   loadConversation(): void {
+    console.log('ConversationDetail - loadConversation called for partnerId:', this.partnerId);
     this.loading = true;
     this.messagingService.getConversation(this.partnerId).subscribe({
       next: (messages) => {
+        console.log('ConversationDetail - Received messages:', messages);
+        // Process profile images in messages
+        messages = messages.map(msg => {
+          if (msg.senderProfilePicture) {
+            msg.senderProfilePicture = this.getProfileImageUrl(msg.senderProfilePicture);
+          }
+          if (msg.recipientProfilePicture) {
+            msg.recipientProfilePicture = this.getProfileImageUrl(msg.recipientProfilePicture);
+          }
+          return msg;
+        });
+        
         this.updateMessages(messages);
         this.loading = false;
         
@@ -419,10 +443,22 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
       // Update partner info based on first message
       if (firstMessage.isMine) {
         this.partnerName = firstMessage.recipientName;
-        this.partnerProfilePicture = firstMessage.recipientProfilePicture;
+        
+        // Fix profile picture URL
+        if (firstMessage.recipientProfilePicture) {
+          this.partnerProfilePicture = this.getProfileImageUrl(firstMessage.recipientProfilePicture);
+        } else {
+          this.partnerProfilePicture = 'assets/images/default-avatar.png';
+        }
       } else {
         this.partnerName = firstMessage.senderName;
-        this.partnerProfilePicture = firstMessage.senderProfilePicture;
+        
+        // Fix profile picture URL
+        if (firstMessage.senderProfilePicture) {
+          this.partnerProfilePicture = this.getProfileImageUrl(firstMessage.senderProfilePicture);
+        } else {
+          this.partnerProfilePicture = 'assets/images/default-avatar.png';
+        }
       }
       
       // Attempt to determine partner role (would need to be included in the message model)
@@ -567,5 +603,27 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     if (event.key === 'Enter' && !event.shiftKey) {
       this.sendMessage(event);
     }
+  }
+  
+  getProfileImageUrl(profilePicturePath?: string): string {
+    if (profilePicturePath) {
+      // Check if it's already a full URL
+      if (profilePicturePath.startsWith('http')) {
+        return profilePicturePath;
+      }
+      try {
+        const timestamp = new Date().getTime();
+        return `${environment.apiUrl}/api/v1/api/users/profile/picture/${profilePicturePath}?t=${timestamp}`;
+      } catch (error) {
+        console.error('Error generating profile picture URL:', error);
+        return 'assets/images/default-avatar.png';
+      }
+    }
+    return 'assets/images/default-avatar.png';
+  }
+  
+  handleImageError(event: any): void {
+    const imgElement = event.target as HTMLImageElement;
+    imgElement.src = 'assets/images/default-avatar.png';
   }
 } 
