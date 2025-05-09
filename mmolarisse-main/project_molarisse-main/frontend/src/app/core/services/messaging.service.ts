@@ -13,6 +13,8 @@ export interface Message {
   recipientName: string;
   recipientProfilePicture: string;
   content: string;
+  mediaType?: 'IMAGE' | 'VOICE';
+  mediaPath?: string;
   sentAt: Date;
   readAt: Date | null;
   isRead: boolean;
@@ -33,6 +35,8 @@ export interface Conversation {
 export interface SendMessageRequest {
   recipientId: number;
   content: string;
+  mediaType?: 'IMAGE' | 'VOICE';
+  mediaPath?: string;
 }
 
 export interface PagedResponse {
@@ -51,6 +55,7 @@ export class MessagingService {
 
   constructor(private http: HttpClient) {
     this.loadUnreadMessageCount();
+    console.log('MessagingService initialized with API URL:', this.apiUrl);
   }
 
   // Get all conversations for the current user
@@ -129,6 +134,21 @@ export class MessagingService {
       } as Message)),
       catchError(error => {
         console.error('Error sending message:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Send a message with media attachment
+  sendMessageWithMedia(formData: FormData): Observable<Message> {
+    return this.http.post<any>(`${this.apiUrl}/with-media`, formData).pipe(
+      map(message => ({
+        ...message,
+        sentAt: new Date(message.sentAt),
+        readAt: message.readAt ? new Date(message.readAt) : null
+      } as Message)),
+      catchError(error => {
+        console.error('Error sending message with media:', error);
         throw error;
       })
     );

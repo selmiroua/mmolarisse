@@ -12,10 +12,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,9 +31,26 @@ import java.util.stream.Collectors;
 public class MessageController {
     
     private static final Logger logger = LoggerFactory.getLogger(MessageController.class);
+    private static final String MEDIA_UPLOAD_DIR = "uploads/messages";
     
     private final MessageService messageService;
     private final MessageMapper messageMapper;
+    
+    @PostConstruct
+    public void init() {
+        // Ensure the upload directory exists when the application starts
+        try {
+            Path uploadDir = Paths.get(MEDIA_UPLOAD_DIR);
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+                logger.info("Created media upload directory: {}", uploadDir.toAbsolutePath());
+            } else {
+                logger.info("Media upload directory exists: {}", uploadDir.toAbsolutePath());
+            }
+        } catch (IOException e) {
+            logger.error("Failed to create media upload directory: {}", e.getMessage(), e);
+        }
+    }
     
     /**
      * Send a message to another user
@@ -44,9 +68,106 @@ public class MessageController {
         Message message = messageService.sendMessage(
                 senderId,
                 request.getRecipientId(),
-                request.getContent());
+                request.getContent(),
+                request.getMediaType(),
+                request.getMediaPath());
         
         return ResponseEntity.ok(messageMapper.toDTO(message, senderId));
+    }
+    
+    /**
+     * Send a message with media attachment
+     */
+    @PostMapping("/with-media")
+    public ResponseEntity<MessageDTO> sendMessageWithMedia(
+            @RequestParam("recipientId") Integer recipientId,
+            @RequestParam("content") String content,
+            @RequestParam("mediaType") String mediaType,
+            @RequestParam(value = "media", required = false) MultipartFile mediaFile,
+            Authentication authentication) throws IOException {
+        
+        User currentUser = (User) authentication.getPrincipal();
+        Integer senderId = currentUser.getId();
+        
+        logger.info("User {} is sending message with media to user {}, media type: {}", 
+                senderId, recipientId, mediaType);
+        
+        String mediaPath = null;
+        
+        if (mediaFile != null && !mediaFile.isEmpty()) {
+            // Ensure upload directory exists
+            Path uploadDir = Paths.get(MEDIA_UPLOAD_DIR);
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+                logger.info("Created media upload directory: {}", uploadDir.toAbsolutePath());
+            }
+            
+            // Generate unique filename
+            String originalFilename = mediaFile.getOriginalFilename();
+            String fileExtension = originalFilename != null && originalFilename.contains(".") 
+                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+                : mediaType.equals("VOICE") ? ".mp3" : ".bin";
+            
+            String filename = UUID.randomUUID().toString() + fileExtension;
+            
+            // Save file
+            Path filePath = uploadDir.resolve(filename);
+            Files.copy(mediaFile.getInputStream(), filePath);
+            
+            // Set media path to be saved in the database
+            mediaPath = filename;
+            
+            logger.info("Saved media file: {}, size: {} bytes, path: {}", 
+                    mediaPath, mediaFile.getSize(), filePath.toAbsolutePath());
+        }
+        
+        Message message = messageService.sendMessage(
+                senderId,
+                recipientId,
+                content,
+                mediaType,
+                mediaPath);
+        
+        return ResponseEntity.ok(messageMapper.toDTO(message, senderId));
+    }
+    
+    /**
+     * Get media file
+     */
+    @GetMapping("/media/{filename:.+}")
+    public ResponseEntity<byte[]> getMedia(@PathVariable String filename) throws IOException {
+        Path filePath = Paths.get(MEDIA_UPLOAD_DIR).resolve(filename);
+        
+        if (!Files.exists(filePath)) {
+            logger.error("Media file not found: {}", filePath.toAbsolutePath());
+            return ResponseEntity.notFound().build();
+        }
+        
+        byte[] media = Files.readAllBytes(filePath);
+        logger.info("Serving media file: {}, size: {} bytes", filename, media.length);
+        
+        String contentType;
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
+            contentType = "image/jpeg";
+        } else if (filename.endsWith(".png")) {
+            contentType = "image/png";
+        } else if (filename.endsWith(".gif")) {
+            contentType = "image/gif";
+        } else if (filename.endsWith(".mp3")) {
+            contentType = "audio/mpeg";
+        } else if (filename.endsWith(".wav")) {
+            contentType = "audio/wav";
+        } else if (filename.endsWith(".webm")) {
+            contentType = "audio/webm";
+        } else {
+            contentType = "application/octet-stream";
+        }
+        
+        return ResponseEntity.ok()
+                .header("Content-Type", contentType)
+                .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
+                .header("Cache-Control", "max-age=86400")
+                .body(media);
     }
     
     /**

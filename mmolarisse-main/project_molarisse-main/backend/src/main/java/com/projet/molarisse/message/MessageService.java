@@ -53,6 +53,31 @@ public class MessageService {
     }
     
     /**
+     * Send a message from one user to another with optional media attachment
+     */
+    @Transactional
+    public Message sendMessage(Integer senderId, Integer recipientId, String content, String mediaType, String mediaPath) {
+        // Validate users exist
+        validateUserExists(senderId);
+        validateUserExists(recipientId);
+        
+        Message message = Message.builder()
+                .senderId(senderId)
+                .recipientId(recipientId)
+                .content(content)
+                .mediaType(mediaType)
+                .mediaPath(mediaPath)
+                .isRead(false)
+                .sentAt(LocalDateTime.now())
+                .build();
+        
+        Message savedMessage = messageRepository.save(message);
+        logger.info("Message sent from user {} to user {} with media type: {}", senderId, recipientId, mediaType);
+        
+        return savedMessage;
+    }
+    
+    /**
      * Get all messages between two users
      */
     @Transactional(readOnly = true)

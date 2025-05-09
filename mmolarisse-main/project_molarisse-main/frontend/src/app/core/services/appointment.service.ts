@@ -36,6 +36,19 @@ export interface AppointmentRequest {
   notes?: string;
 }
 
+export interface UnregisteredPatientAppointmentRequest {
+  nom: string;
+  prenom: string;
+  email: string;
+  phoneNumber: string;
+  dateNaissance: string;
+  doctorId: number;
+  appointmentDateTime: string;
+  caseType: CaseType;
+  appointmentType: AppointmentType;
+  notes?: string;
+}
+
 export interface StatusUpdateRequest {
   status: AppointmentStatus;
   secretaryId?: number;
@@ -728,5 +741,91 @@ export class AppointmentService {
   // Getter for apiUrl
   getApiUrl(): string {
     return this.apiUrl;
+  }
+
+  // Secretary books appointment for unregistered patient
+  bookAppointmentForUnregisteredPatient(request: UnregisteredPatientAppointmentRequest): Observable<Appointment> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Content-Type': 'application/json'
+    });
+
+    console.log('Sending unregistered patient appointment request:', request);
+    
+    return this.http.post<Appointment>(`${this.apiUrl}/book-for-unregistered-patient`, request, { headers })
+      .pipe(
+        map(appointment => {
+          console.log('Raw appointment response:', appointment);
+          return this.normalizeAppointment(appointment);
+        }),
+        catchError(error => {
+          console.error('Error booking appointment for unregistered patient:', error);
+          let errorMessage = 'Failed to book appointment for unregistered patient';
+          
+          if (error.error && error.error.error) {
+            errorMessage = error.error.error;
+          } else if (error.error && typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          return throwError(() => new Error(errorMessage));
+        })
+      );
+  }
+
+  // Méthode spéciale pour récupérer tous les rendez-vous sans filtrage
+  getAllAppointmentsForSecretaryDoctor(): Observable<Appointment[]> {
+    console.log('Getting ALL appointments for secretary\'s doctor');
+    
+    return this.profileService.getCurrentProfile().pipe(
+      switchMap(profile => {
+        console.log('Current profile:', profile);
+        
+        if (!profile || !profile.id) {
+          console.error('No profile or profile ID found');
+          return throwError(() => new Error('Profile not found'));
+        }
+        
+        // Define extended profile type with the expected properties
+        interface ExtendedProfile {
+          id: number;
+          role?: string;
+          assignedDoctor?: {
+            id: number;
+          };
+        }
+        
+        // Cast profile to the extended type
+        const extendedProfile = profile as unknown as ExtendedProfile;
+        
+        // Si c'est une secrétaire, vérifier qu'elle a un médecin assigné
+        if (extendedProfile.role === 'SECRETAIRE' && (!extendedProfile.assignedDoctor || !extendedProfile.assignedDoctor.id)) {
+          console.error('Secretary has no assigned doctor');
+          return throwError(() => new Error('No assigned doctor found'));
+        }
+        
+        // Récupérer l'ID du médecin assigné
+        const doctorId = extendedProfile.assignedDoctor?.id;
+        console.log('Getting appointments for doctor ID:', doctorId);
+        
+        // Utiliser l'endpoint pour récupérer tous les rendez-vous du médecin
+        const url = `${this.apiUrl}/doctor/${doctorId}/appointments`;
+        console.log('Request URL:', url);
+        
+        return this.http.get<Appointment[]>(url, { headers: this.getHeaders() }).pipe(
+          map(appointments => {
+            console.log('Raw doctor appointments:', appointments);
+            console.log('Number of appointments:', appointments.length);
+            return this.normalizeAppointments(appointments);
+          }),
+          catchError(error => {
+            console.error('Error fetching doctor appointments:', error);
+            return throwError(() => new Error('Failed to fetch doctor appointments'));
+          })
+        );
+      })
+    );
   }
 } 

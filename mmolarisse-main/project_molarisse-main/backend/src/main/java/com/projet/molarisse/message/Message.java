@@ -33,6 +33,12 @@ public class Message {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
     
+    @Column(name = "media_type")
+    private String mediaType; // "IMAGE", "VOICE", or null for text
+    
+    @Column(name = "media_path")
+    private String mediaPath; // Path to the media file
+    
     @Column(name = "sent_at", nullable = false, updatable = false)
     @CreatedDate
     private LocalDateTime sentAt;

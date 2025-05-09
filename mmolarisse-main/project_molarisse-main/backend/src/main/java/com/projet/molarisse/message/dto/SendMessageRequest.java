@@ -16,4 +16,8 @@ public class SendMessageRequest {
     
     @NotBlank(message = "Message content cannot be empty")
     private String content;
+    
+    private String mediaType; // "IMAGE", "VOICE", or null for text
+    
+    private String mediaPath; // Path to the stored media file
 } 

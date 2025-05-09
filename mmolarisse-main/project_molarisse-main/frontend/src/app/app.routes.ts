@@ -21,6 +21,7 @@ import { LandingComponent } from './landing/landing.component';
 import { EspaceSecComponent } from './secretary/espace-sec/espace-sec.component';
 import { AppointmentTabsComponent } from './dashboard/appointment/appointment-tabs.component';
 import { AppointmentCalendarComponent } from './dashboard/appointment/appointment-calendar.component';
+import { BookUnregisteredPatientAppointmentComponent } from './dashboard/secretary/book-unregistered-patient-appointment.component';
 
 export const routes: Routes = [
   { 
@@ -153,6 +154,12 @@ export const routes: Routes = [
     path: 'mon-profil',
     component: ProfileComponent,
     canActivate: [AuthGuard]
+  },
+  {
+    path: 'secretary/book-unregistered-appointment',
+    component: BookUnregisteredPatientAppointmentComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['SECRETAIRE'] }
   },
   // Wildcard route to catch all other routes and redirect to landing page
   {

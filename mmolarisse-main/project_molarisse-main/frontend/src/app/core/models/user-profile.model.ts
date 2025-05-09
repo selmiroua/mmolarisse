@@ -11,4 +11,9 @@ export interface UserProfile {
   address?: string;
   createdAt: Date;
   updatedAt: Date;
+  assignedDoctor?: {
+    id: number;
+    nom?: string;
+    prenom?: string;
+  };
 } 

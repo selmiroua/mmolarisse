@@ -20,10 +20,13 @@ export interface Notification {
 export class NotificationService {
   private apiUrl = `${environment.apiUrl}/api/v1/api/notifications`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    console.log('NotificationService initialized with API URL:', this.apiUrl);
+  }
 
   // Get all notifications for the current user
   getAllNotifications(): Observable<Notification[]> {
+    console.log('Getting all notifications from:', this.apiUrl);
     return this.http.get<Notification[]>(this.apiUrl);
   }
 

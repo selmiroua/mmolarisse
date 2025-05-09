@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Transactional;
+import com.projet.molarisse.role.Role;
+import com.projet.molarisse.role.RoleRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +31,7 @@ public class AppointmentService {
     private final DentalInterventionRepository dentalInterventionRepository;
     private final ObjectMapper objectMapper;
     private final AppointmentDocumentRepository documentRepository;
+    private final RoleRepository roleRepository;
 
     public Appointment bookAppointment(
         Integer patientId,
@@ -442,5 +445,73 @@ public class AppointmentService {
                 link
             );
         }
+    }
+
+    // New method for secretary to create an appointment for an unregistered patient
+    @Transactional
+    public Appointment bookAppointmentForUnregisteredPatient(
+            UnregisteredPatientAppointmentRequest request,
+            Integer secretaryId) {
+        
+        // Verify secretary and get their assigned doctor
+        User secretary = userRepository.findById(secretaryId)
+                .orElseThrow(() -> new RuntimeException("Secretary not found"));
+        
+        // Check if secretary is assigned to the doctor and approved
+        if (secretary.getAssignedDoctor() == null || secretary.getSecretaryStatus() != SecretaryStatus.APPROVED) {
+            throw new RuntimeException("Secretary is not assigned to any doctor or not approved");
+        }
+        
+        // Verify that the doctor ID matches the secretary's assigned doctor
+        User doctor = userRepository.findById(request.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        
+        if (!doctor.getId().equals(secretary.getAssignedDoctor().getId())) {
+            throw new RuntimeException("Secretary can only book appointments for their assigned doctor");
+        }
+
+        // Create a temporary patient entry for the unregistered patient
+        Role patientRole = roleRepository.findByNom("PATIENT")
+                .orElseThrow(() -> new RuntimeException("Patient role not found"));
+        
+        User temporaryPatient = User.builder()
+                .nom(request.getNom())
+                .prenom(request.getPrenom())
+                .email(request.getEmail())
+                .phoneNumber(request.getPhoneNumber())
+                .dateNaissance(request.getDateNaissance())
+                .role(patientRole)
+                .enabled(true)
+                .accountLocked(false)
+                .visible(true)
+                .build();
+        
+        User savedPatient = userRepository.save(temporaryPatient);
+
+        // Create the appointment
+        Appointment appointment = Appointment.builder()
+                .patient(savedPatient)
+                .doctor(doctor)
+                .secretary(secretary)
+                .appointmentDateTime(request.getAppointmentDateTime())
+                .caseType(request.getCaseType())
+                .appointmentType(request.getAppointmentType())
+                .status(Appointment.AppointmentStatus.ACCEPTED) // Auto-accept since it's created by the secretary
+                .notes(request.getNotes())
+                .build();
+
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+        
+        // Create notification for the doctor
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String formattedDateTime = request.getAppointmentDateTime().format(formatter);
+        String message = "Nouveau rendez-vous créé par votre secrétaire pour le patient " + 
+                         savedPatient.getNom() + " " + savedPatient.getPrenom() + 
+                         " le " + formattedDateTime;
+        
+        String link = "/doctor/appointments/" + savedAppointment.getId();
+        notificationService.createNotification(doctor, message, NotificationType.NEW_APPOINTMENT, link);
+        
+        return savedAppointment;
     }
 }

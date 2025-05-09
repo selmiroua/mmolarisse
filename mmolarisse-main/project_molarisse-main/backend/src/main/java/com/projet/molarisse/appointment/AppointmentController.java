@@ -491,4 +491,22 @@ public class AppointmentController {
         
         return ResponseEntity.ok(saved);
     }
+    
+    // New endpoint for secretary to book appointment for unregistered patient
+    @PostMapping("/book-for-unregistered-patient")
+    @PreAuthorize("hasRole('SECRETAIRE')")
+    public ResponseEntity<?> bookAppointmentForUnregisteredPatient(
+            @RequestBody UnregisteredPatientAppointmentRequest request,
+            Authentication authentication) {
+        try {
+            User secretary = (User) authentication.getPrincipal();
+            Appointment appointment = appointmentService.bookAppointmentForUnregisteredPatient(
+                    request,
+                    secretary.getId());
+            return ResponseEntity.ok(appointment);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                   .body(Map.of("error", e.getMessage()));
+        }
+    }
 }
