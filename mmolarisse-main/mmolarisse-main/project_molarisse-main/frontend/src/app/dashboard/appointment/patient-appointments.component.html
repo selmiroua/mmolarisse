@@ -1,0 +1,168 @@
+<div class="appointments-container">
+  <div class="appointments-header">
+    <h2>Mes Rendez-vous</h2>
+    <div class="search-bar">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input type="text" 
+             placeholder="Rechercher un rendez-vous..." 
+             (input)="filterAppointments($event)"
+             class="search-input">
+    </div>
+  </div>
+
+  <mat-tab-group (selectedTabChange)="setActiveTab($event.tab.textLabel.toLowerCase())">
+    <mat-tab label="À venir">
+      <div class="appointments-content">
+        <div *ngIf="loading" class="loading-spinner">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="error" class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage }}</p>
+        </div>
+
+        <div *ngIf="!loading && !error" class="appointments-list">
+          <div *ngFor="let appointment of getFilteredAppointments()" class="appointment-card">
+            <div class="appointment-header">
+              <div class="doctor-info">
+                <h3>{{ appointment.doctor?.prenom }} {{ appointment.doctor?.nom }}</h3>
+                <span class="appointment-type">{{ getAppointmentTypeLabel(appointment.appointmentType) }}</span>
+              </div>
+              <div class="appointment-status" [class]="getStatusClass(appointment.status)">
+                {{ getStatusLabel(appointment.status) }}
+              </div>
+            </div>
+
+            <div class="appointment-details">
+              <div class="detail-item">
+                <mat-icon>event</mat-icon>
+                <span>{{ appointment.appointmentDateTime | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="detail-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ appointment.appointmentDateTime | date:'HH:mm' }}</span>
+              </div>
+              <div class="detail-item">
+                <mat-icon>location_on</mat-icon>
+                <span>{{ appointment.doctor?.address || 'Adresse non disponible' }}</span>
+              </div>
+            </div>
+
+            <div class="appointment-actions">
+              <button mat-button color="primary" (click)="rescheduleAppointment(appointment)" 
+                      *ngIf="appointment.status === 'PENDING' || appointment.status === 'ACCEPTED'">
+                <mat-icon>edit</mat-icon>
+                Modifier
+              </button>
+              <button mat-button color="warn" (click)="cancelAppointment(appointment)"
+                      *ngIf="appointment.status === 'PENDING' || appointment.status === 'ACCEPTED'">
+                <mat-icon>cancel</mat-icon>
+                Annuler
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="getFilteredAppointments().length === 0" class="no-appointments">
+            <mat-icon>event_busy</mat-icon>
+            <p>Aucun rendez-vous trouvé</p>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Annulés">
+      <div class="appointments-content">
+        <div *ngIf="loading" class="loading-spinner">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="error" class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage }}</p>
+        </div>
+
+        <div *ngIf="!loading && !error" class="appointments-list">
+          <div *ngFor="let appointment of getFilteredAppointments()" class="appointment-card">
+            <div class="appointment-header">
+              <div class="doctor-info">
+                <h3>{{ appointment.doctor?.prenom }} {{ appointment.doctor?.nom }}</h3>
+                <span class="appointment-type">{{ getAppointmentTypeLabel(appointment.appointmentType) }}</span>
+              </div>
+              <div class="appointment-status" [class]="getStatusClass(appointment.status)">
+                {{ getStatusLabel(appointment.status) }}
+              </div>
+            </div>
+
+            <div class="appointment-details">
+              <div class="detail-item">
+                <mat-icon>event</mat-icon>
+                <span>{{ appointment.appointmentDateTime | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="detail-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ appointment.appointmentDateTime | date:'HH:mm' }}</span>
+              </div>
+              <div class="detail-item">
+                <mat-icon>location_on</mat-icon>
+                <span>{{ appointment.doctor?.address || 'Adresse non disponible' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="getFilteredAppointments().length === 0" class="no-appointments">
+            <mat-icon>event_busy</mat-icon>
+            <p>Aucun rendez-vous annulé</p>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Terminés">
+      <div class="appointments-content">
+        <div *ngIf="loading" class="loading-spinner">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="error" class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage }}</p>
+        </div>
+
+        <div *ngIf="!loading && !error" class="appointments-list">
+          <div *ngFor="let appointment of getFilteredAppointments()" class="appointment-card">
+            <div class="appointment-header">
+              <div class="doctor-info">
+                <h3>{{ appointment.doctor?.prenom }} {{ appointment.doctor?.nom }}</h3>
+                <span class="appointment-type">{{ getAppointmentTypeLabel(appointment.appointmentType) }}</span>
+              </div>
+              <div class="appointment-status" [class]="getStatusClass(appointment.status)">
+                {{ getStatusLabel(appointment.status) }}
+              </div>
+            </div>
+
+            <div class="appointment-details">
+              <div class="detail-item">
+                <mat-icon>event</mat-icon>
+                <span>{{ appointment.appointmentDateTime | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="detail-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ appointment.appointmentDateTime | date:'HH:mm' }}</span>
+              </div>
+              <div class="detail-item">
+                <mat-icon>location_on</mat-icon>
+                <span>{{ appointment.doctor?.address || 'Adresse non disponible' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="getFilteredAppointments().length === 0" class="no-appointments">
+            <mat-icon>event_busy</mat-icon>
+            <p>Aucun rendez-vous terminé</p>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div> 

@@ -1,0 +1,45 @@
+<div class="filter-bar" style="display: flex; gap: 20px; margin-bottom: 30px; align-items: center;">
+  <mat-form-field appearance="outline" style="min-width: 200px;">
+    <mat-label>Filtrer par ville</mat-label>
+    <mat-select [(ngModel)]="selectedVille">
+      <mat-option value="">Toutes les villes</mat-option>
+      <mat-option *ngFor="let ville of uniqueVilles" [value]="ville">{{ ville }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" style="min-width: 200px;">
+    <mat-label>Filtrer par spécialité</mat-label>
+    <mat-select [(ngModel)]="selectedSpecialite">
+      <mat-option value="">Toutes les spécialités</mat-option>
+      <mat-option *ngFor="let specialite of uniqueSpecialites" [value]="specialite">{{ specialite }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<div class="doctor-list">
+  <div class="doctor-card" *ngFor="let doctor of filteredDoctors">
+    <div class="doctor-avatar">
+      <img [src]="doctor.profilePicturePath || 'assets/images/default-avatar.png'" [alt]="'Photo du médecin ' + doctor.nom + ' ' + doctor.prenom" />
+    </div>
+    <div class="top-row">
+      <div class="doctor-specialty">
+        {{ doctor.specialities && doctor.specialities.length > 0 ? doctor.specialities.join(', ') : 'Non spécifiée' }}
+      </div>
+      <div *ngIf="doctor.isAvailable" class="availability-badge">Disponible</div>
+    </div>
+    <div class="doctor-name">Dr. {{ doctor.prenom }} {{ doctor.nom }}</div>
+    <div class="info-row">
+      <div class="doctor-location" *ngIf="doctor.ville">
+        <mat-icon>location_on</mat-icon>
+        {{ doctor.ville }}
+      </div>
+      <div class="consultation-fee">
+        <span>Tarif</span>
+        <span class="fee-amount">{{ doctor.fee || 'N/A' }}DT</span>
+      </div>
+    </div>
+    <button class="book-button" (click)="openAppointmentDialog(doctor)">
+      <mat-icon>event</mat-icon>
+      Prendre RDV
+    </button>
+  </div>
+</div> 
