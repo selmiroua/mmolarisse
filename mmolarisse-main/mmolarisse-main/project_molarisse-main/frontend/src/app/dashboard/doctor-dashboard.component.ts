@@ -38,6 +38,8 @@ import { DoctorWelcomeDialogComponent } from '../doctor/doctor-welcome-dialog/do
 import { AppointmentDetailsDialogComponent } from '../appointment-details-dialog/appointment-details-dialog.component';
 import { MessageBellComponent } from '../shared/message-bell/message-bell.component';
 import { MessagingComponent } from '../messaging/messaging.component';
+import { ColorPaletteDialogComponent } from './color-palette-dialog.component';
+import { ColorPreferenceService } from '../core/services/color-preference.service';
 
 interface User {
   firstName: string;
@@ -87,7 +89,8 @@ interface DecodedToken {
     DoctorSecretaryViewComponent,
     AppointmentDetailsDialogComponent,
     MessageBellComponent,
-    MessagingComponent
+    MessagingComponent,
+    ColorPaletteDialogComponent
   ],
   templateUrl: './doctor-dashboard.component.html',
   styleUrls: ['./doctor-dashboard.component.scss']
@@ -119,7 +122,8 @@ export class DoctorDashboardComponent implements OnInit {
     private appointmentService: AppointmentService,
     private profileService: ProfileService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private colorPreferenceService: ColorPreferenceService
   ) {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -132,6 +136,7 @@ export class DoctorDashboardComponent implements OnInit {
     this.loadDoctorProfile();
     this.checkDoctorVerification();
     this.loadAppointmentStats();
+    this.loadColorPreferences();
   }
 
   checkDoctorVerification() {
@@ -390,8 +395,35 @@ export class DoctorDashboardComponent implements OnInit {
   }
 
   showSettings(): void {
-    this.activeSection = 'settings';
-    this.isProfileDropdownOpen = false;
+    // Open color palette dialog
+    const dialogRef = this.dialog.open(ColorPaletteDialogComponent, {
+      width: '500px',
+      disableClose: false,
+      data: null  // We'll load the current colors inside the component
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Save the color preferences if dialog was not cancelled
+        this.colorPreferenceService.saveColorPreferences(result).subscribe({
+          next: () => {
+            // Apply the new colors to the DOM
+            this.colorPreferenceService.applyColorPreferencesToDOM(result);
+            this.snackBar.open('Les préférences de couleurs ont été enregistrées', 'OK', {
+              duration: 3000
+            });
+          },
+          error: (error) => {
+            console.error('Error saving color preferences:', error);
+            this.snackBar.open('Erreur lors de l\'enregistrement des préférences', 'OK', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      }
+      this.isProfileDropdownOpen = false;
+    });
   }
 
   toggleFullscreen(): void {
@@ -462,6 +494,40 @@ export class DoctorDashboardComponent implements OnInit {
       // Show profile inside dashboard and update URL
       this.activeSection = 'profile';
       this.router.navigate(['/dashboard/doctor/profile']);
+    });
+  }
+
+  // Load and apply color preferences
+  private loadColorPreferences(): void {
+    this.colorPreferenceService.getColorPreferences().subscribe(
+      colors => {
+        this.colorPreferenceService.applyColorPreferencesToDOM(colors);
+      },
+      error => {
+        console.error('Error loading color preferences:', error);
+        // Apply defaults if there was an error
+        this.colorPreferenceService.applyColorPreferencesToDOM(this.colorPreferenceService.defaultColors);
+      }
+    );
+  }
+
+  // Reset color preferences to default
+  resetColorPreferences(): void {
+    this.colorPreferenceService.resetColorPreferences().subscribe({
+      next: () => {
+        // Apply default colors
+        this.colorPreferenceService.applyColorPreferencesToDOM(this.colorPreferenceService.defaultColors);
+        this.snackBar.open('Les couleurs ont été réinitialisées', 'OK', {
+          duration: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Error resetting color preferences:', error);
+        this.snackBar.open('Erreur lors de la réinitialisation des couleurs', 'OK', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+      }
     });
   }
 }

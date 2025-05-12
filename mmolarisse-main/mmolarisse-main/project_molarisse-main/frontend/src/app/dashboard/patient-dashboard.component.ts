@@ -171,7 +171,7 @@ export class PatientDashboardComponent implements OnInit {
     this.loading = true;
     console.log('Loading patient appointments in dashboard...');
     
-    this.appointmentService.getPatientAppointments().subscribe({
+    this.appointmentService.getMyAppointments().subscribe({
       next: (appointments: Appointment[]) => {
         console.log('Successfully fetched appointments:', appointments);
         this.appointments = appointments;
@@ -197,14 +197,86 @@ export class PatientDashboardComponent implements OnInit {
       error: (error: unknown) => {
         console.error('Error loading appointments:', error);
         this.loading = false;
+        
+        // Create demo appointments data
+        this.createDemoAppointments();
+        
         // Show an error message to the user
-        this.snackBar.open('Erreur lors du chargement des rendez-vous', 'Fermer', {
-          duration: 3000,
+        this.snackBar.open('Erreur de connexion au serveur. Affichage des données de démonstration.', 'Fermer', {
+          duration: 5000,
           horizontalPosition: 'end',
           verticalPosition: 'bottom'
         });
       }
     });
+  }
+
+  // Create demo appointments when server connection fails
+  createDemoAppointments(): void {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    this.appointments = [
+      {
+        id: 1,
+        appointmentDateTime: today.toISOString(),
+        status: AppointmentStatus.ACCEPTED,
+        caseType: CaseType.NORMAL,
+        appointmentType: AppointmentType.SOIN,
+        notes: 'Rendez-vous de démonstration',
+        doctor: {
+          id: 1,
+          prenom: 'Jean',
+          nom: 'Dupont',
+          address: '123 Rue de la Médecine, Paris'
+        }
+      },
+      {
+        id: 2,
+        appointmentDateTime: tomorrow.toISOString(),
+        status: AppointmentStatus.PENDING,
+        caseType: CaseType.NORMAL,
+        appointmentType: AppointmentType.DETARTRAGE,
+        notes: 'Rendez-vous de démonstration',
+        doctor: {
+          id: 2,
+          prenom: 'Marie',
+          nom: 'Curie',
+          address: '456 Avenue de la Science, Lyon'
+        }
+      },
+      {
+        id: 3,
+        appointmentDateTime: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        status: AppointmentStatus.COMPLETED,
+        caseType: CaseType.NORMAL,
+        appointmentType: AppointmentType.EXTRACTION,
+        notes: 'Rendez-vous de démonstration terminé',
+        doctor: {
+          id: 1,
+          prenom: 'Jean',
+          nom: 'Dupont',
+          address: '123 Rue de la Médecine, Paris'
+        }
+      }
+    ];
+    
+    // Calculate stats from demo data
+    const demoToday = new Date();
+    demoToday.setHours(0, 0, 0, 0);
+    
+    this.todayAppointments = this.appointments.filter(apt => {
+      const aptDate = new Date(apt.appointmentDateTime);
+      aptDate.setHours(0, 0, 0, 0);
+      return aptDate.getTime() === demoToday.getTime();
+    }).length;
+    
+    this.pendingAppointments = this.appointments.filter(apt => 
+      apt.status === AppointmentStatus.PENDING || apt.status === AppointmentStatus.ACCEPTED
+    ).length;
+    
+    this.totalAppointments = this.appointments.length;
   }
 
   getAppointmentTypeLabel(type: AppointmentType): string {
@@ -411,7 +483,7 @@ export class PatientDashboardComponent implements OnInit {
     
     console.log('Manually refreshing appointments...');
     
-    this.appointmentService.getPatientAppointments().subscribe({
+    this.appointmentService.getMyAppointments().subscribe({
       next: (appointments) => {
         console.log('Successfully refreshed appointments:', appointments);
         this.appointments = appointments;
@@ -431,7 +503,10 @@ export class PatientDashboardComponent implements OnInit {
         this.appointmentsError = true;
         this.appointmentsErrorMessage = error.message || 'Une erreur est survenue lors du chargement des rendez-vous.';
         
-        this.snackBar.open('Erreur lors du chargement des rendez-vous', 'Fermer', {
+        // Create demo appointments data
+        this.createDemoAppointments();
+        
+        this.snackBar.open('Erreur de connexion au serveur. Affichage des données de démonstration.', 'Fermer', {
           duration: 5000,
           horizontalPosition: 'end',
           verticalPosition: 'bottom'

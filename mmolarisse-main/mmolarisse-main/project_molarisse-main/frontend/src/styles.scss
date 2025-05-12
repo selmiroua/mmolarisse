@@ -1,7 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "@fortawesome/fontawesome-free/css/all.min.css";
-
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 html, body { height: 100%; }
@@ -132,4 +131,92 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   .mat-simple-snackbar-action {
     color: white;
   }
+}
+
+/* Global Calendar Styles */
+.fc {
+  font-family: inherit;
+}
+
+.fc-scrollgrid {
+  border-collapse: collapse;
+}
+
+.fc-scrollgrid td {
+  border: 1px solid #e2e8f0;
+}
+
+.fc-timegrid-slot-label {
+  vertical-align: middle;
+}
+
+.fc-timegrid-axis {
+  background: #f8fafc;
+}
+
+.fc-timegrid-slot {
+  height: 48px;
+}
+
+.fc-event {
+  cursor: pointer;
+  padding: 4px;
+  margin: 2px 0;
+  border-radius: 4px;
+}
+
+/* Add CSS variable-based styles for status colors */
+.fc-event.status-pending {
+  background-color: var(--status-pending-bg, #FFF8E1) !important;
+  color: var(--status-pending-text, #000000) !important;
+  border-left: 4px solid var(--status-pending-border, #f97316) !important;
+}
+
+.fc-event.status-accepted {
+  background-color: var(--status-accepted-bg, #E8F5E9) !important;
+  color: var(--status-accepted-text, #000000) !important;
+  border-left: 4px solid var(--status-accepted-border, #0ea5e9) !important;
+}
+
+.fc-event.status-completed {
+  background-color: var(--status-completed-bg, #E3F2FD) !important;
+  color: var(--status-completed-text, #000000) !important;
+  border-left: 4px solid var(--status-completed-border, #22c55e) !important;
+}
+
+.fc-event.status-rejected, .fc-event.status-canceled {
+  background-color: var(--status-rejected-bg, #FFEBEE) !important;
+  color: var(--status-rejected-text, #000000) !important;
+  border-left: 4px solid var(--status-rejected-border, #ef4444) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .fc-header-toolbar {
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* Color palette dialog container styles */
+.color-palette-dialog-container .mat-mdc-dialog-container {
+  padding: 0 !important;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+.color-palette-dialog-container .mdc-dialog__surface {
+  border-radius: 12px !important;
+  overflow: hidden !important;
 }

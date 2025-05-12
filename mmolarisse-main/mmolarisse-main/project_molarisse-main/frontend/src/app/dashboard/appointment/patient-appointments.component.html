@@ -63,10 +63,20 @@
             </div>
           </div>
 
-          <div *ngIf="getFilteredAppointments().length === 0" class="no-appointments">
+          <div *ngIf="getFilteredAppointments().length === 0 && totalAppointments === 0" class="no-appointments">
             <mat-icon>event_busy</mat-icon>
             <p>Aucun rendez-vous trouvé</p>
           </div>
+          
+          <!-- Pagination Controls -->
+          <mat-paginator *ngIf="totalAppointments > 0"
+            [length]="totalAppointments"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            [pageIndex]="currentPage"
+            (page)="onPageChange($event)"
+            aria-label="Sélectionner une page">
+          </mat-paginator>
         </div>
       </div>
     </mat-tab>
@@ -110,10 +120,20 @@
             </div>
           </div>
 
-          <div *ngIf="getFilteredAppointments().length === 0" class="no-appointments">
+          <div *ngIf="getFilteredAppointments().length === 0 && totalAppointments === 0" class="no-appointments">
             <mat-icon>event_busy</mat-icon>
             <p>Aucun rendez-vous annulé</p>
           </div>
+          
+          <!-- Pagination Controls -->
+          <mat-paginator *ngIf="totalAppointments > 0"
+            [length]="totalAppointments"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            [pageIndex]="currentPage"
+            (page)="onPageChange($event)"
+            aria-label="Sélectionner une page">
+          </mat-paginator>
         </div>
       </div>
     </mat-tab>
@@ -157,10 +177,20 @@
             </div>
           </div>
 
-          <div *ngIf="getFilteredAppointments().length === 0" class="no-appointments">
+          <div *ngIf="getFilteredAppointments().length === 0 && totalAppointments === 0" class="no-appointments">
             <mat-icon>event_busy</mat-icon>
             <p>Aucun rendez-vous terminé</p>
           </div>
+          
+          <!-- Pagination Controls -->
+          <mat-paginator *ngIf="totalAppointments > 0"
+            [length]="totalAppointments"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            [pageIndex]="currentPage"
+            (page)="onPageChange($event)"
+            aria-label="Sélectionner une page">
+          </mat-paginator>
         </div>
       </div>
     </mat-tab>

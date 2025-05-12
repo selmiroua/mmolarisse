@@ -1,0 +1,159 @@
+.doctor-card {
+  background: rgba(255,255,255,0.85);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 18px 0 rgba(55, 131, 146, 0.10);
+  border: 1.5px solid #e3f2fd;
+  padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+  margin-bottom: 2rem;
+  min-width: 270px;
+  max-width: 340px;
+  position: relative;
+  overflow: visible;
+  transition: box-shadow 0.3s, transform 0.3s, border 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &:hover {
+    box-shadow: 0 12px 32px 0 #90caf9cc;
+    transform: translateY(-8px) scale(1.03);
+    border: 2px solid #378392;
+  }
+
+  .doctor-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #e3f2fd;
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid #fff;
+    }
+  }
+
+  .top-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.3rem;
+    .doctor-specialty {
+      font-size: 0.95rem;
+      color: #378392;
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+    .availability-badge {
+      background: #e3fbe3;
+      color: #43a047;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.8rem;
+      border-radius: 1rem;
+      margin-left: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        background: #43a047;
+        border-radius: 50%;
+        margin-right: 4px;
+      }
+    }
+  }
+
+  .doctor-name {
+    font-size: 1.13rem;
+    font-weight: 700;
+    color: #205a63;
+    margin-bottom: 0.2rem;
+    text-align: center;
+    letter-spacing: 0.2px;
+  }
+
+  .info-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.5rem 0 0.2rem 0;
+    .doctor-location {
+      font-size: 0.93rem;
+      color: #90caf9;
+      display: flex;
+      align-items: center;
+      i, mat-icon {
+        font-size: 1rem;
+        margin-right: 4px;
+        color: #90caf9;
+      }
+    }
+    .consultation-fee {
+      font-size: 0.98rem;
+      color: #378392;
+      font-weight: 600;
+      .fee-amount {
+        font-size: 1.05rem;
+        color: #378392;
+        font-weight: 700;
+        margin-left: 2px;
+      }
+    }
+  }
+
+  .book-button {
+    background: linear-gradient(90deg, #90caf9 0%, #6caebb 100%);
+    color: #fff;
+    border: none;
+    border-radius: 1.2rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 1.1rem auto 0 auto;
+    transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
+    width: 90%;
+    box-shadow: 0 2px 8px #90caf9a0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: -60%;
+      top: 0;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 100%);
+      transform: skewX(-20deg);
+      transition: left 0.5s;
+    }
+
+    &:hover::after {
+      left: 110%;
+      transition: left 0.5s;
+    }
+
+    &:hover {
+      background: linear-gradient(90deg, #378392 60%, #90caf9 100%);
+      box-shadow: 0 4px 16px #90caf9a0;
+      transform: scale(1.04);
+    }
+  }
+} 

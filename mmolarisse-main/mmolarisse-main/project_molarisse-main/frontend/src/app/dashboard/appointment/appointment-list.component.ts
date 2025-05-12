@@ -1,9 +1,9 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -156,6 +156,16 @@ import { ProfileService } from '../../profile/profile.service';
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
       </table>
+      
+      <!-- Pagination for appointments -->
+      <mat-paginator *ngIf="!loading && totalAppointments > 0"
+                    [length]="totalAppointments"
+                    [pageSize]="pageSize"
+                    [pageSizeOptions]="pageSizeOptions"
+                    [pageIndex]="currentPage"
+                    (page)="onPageChange($event)"
+                    aria-label="Sélectionner une page">
+      </mat-paginator>
     </div>
   `,
   styles: [`
@@ -251,6 +261,14 @@ import { ProfileService } from '../../profile/profile.service';
     .canceled::before {
       background-color: #616161;
     }
+    
+    /* Pagination styles */
+    mat-paginator {
+      margin-top: 20px;
+      border-radius: 8px;
+      background-color: #f9fafb;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
   `],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [DatePipe]
@@ -258,13 +276,21 @@ import { ProfileService } from '../../profile/profile.service';
 export class AppointmentListComponent implements OnInit {
   @Input() userRole!: 'patient' | 'doctor' | 'secretaire';
   @Input() limit?: number;
+  @ViewChild(MatPaginatorModule) paginator: any;
+  
   appointments: Appointment[] = [];
   displayedAppointments: Appointment[] = [];
   loading = true;
   displayedColumns: string[] = ['appointmentDateTime', 'status', 'type', 'case', 'person', 'notes', 'actions'];
   title = 'Appointments';
   AppointmentStatus = AppointmentStatus;
-
+  
+  // Pagination variables
+  pageSize: number = 10;
+  currentPage: number = 0;
+  pageSizeOptions: number[] = [5, 10, 25, 50];
+  totalAppointments: number = 0;
+  
   constructor(
     private appointmentService: AppointmentService,
     private snackBar: MatSnackBar,
@@ -286,6 +312,13 @@ export class AppointmentListComponent implements OnInit {
       this.title = 'Gestion des rendez-vous';
     }
   }
+  
+  // Pagination handler
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updateDisplayedAppointments();
+  }
 
   loadAppointments(): void {
     this.loading = true;
@@ -299,6 +332,7 @@ export class AppointmentListComponent implements OnInit {
       this.appointmentService.getMyAppointments().subscribe({
         next: (data) => {
           this.appointments = data;
+          this.totalAppointments = data.length;
           this.updateDisplayedAppointments();
           this.loading = false;
         },
@@ -312,6 +346,7 @@ export class AppointmentListComponent implements OnInit {
       this.appointmentService.getMyDoctorAppointments().subscribe({
         next: (data) => {
           this.appointments = data;
+          this.totalAppointments = data.length;
           this.updateDisplayedAppointments();
           this.loading = false;
         },
@@ -324,6 +359,7 @@ export class AppointmentListComponent implements OnInit {
       this.appointmentService.getMySecretaryAppointments().subscribe({
         next: (data) => {
           this.appointments = data;
+          this.totalAppointments = data.length;
           this.updateDisplayedAppointments();
           this.loading = false;
         },
@@ -336,10 +372,21 @@ export class AppointmentListComponent implements OnInit {
   }
 
   private updateDisplayedAppointments(): void {
-    if (this.limit && this.appointments.length > this.limit) {
+    // Sort appointments by date - most recent first
+    this.appointments.sort((a, b) => {
+      const dateA = new Date(a.appointmentDateTime);
+      const dateB = new Date(b.appointmentDateTime);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    // Use pagination if not limited
+    if (this.limit) {
+      // Use a fixed limit if specified
       this.displayedAppointments = this.appointments.slice(0, this.limit);
     } else {
-      this.displayedAppointments = this.appointments;
+      // Use pagination
+      const startIndex = this.currentPage * this.pageSize;
+      this.displayedAppointments = this.appointments.slice(startIndex, startIndex + this.pageSize);
     }
   }
 

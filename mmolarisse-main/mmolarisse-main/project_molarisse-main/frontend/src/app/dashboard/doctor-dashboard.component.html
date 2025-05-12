@@ -113,6 +113,10 @@
               <mat-icon>settings</mat-icon>
               <span>Paramètres</span>
             </a>
+            <a (click)="resetColorPreferences()" class="dropdown-item">
+              <mat-icon>format_color_reset</mat-icon>
+              <span>Réinitialiser les couleurs</span>
+            </a>
             <a (click)="showNotifications()" class="dropdown-item">
               <mat-icon>notifications</mat-icon>
               <span>Notifications</span>
@@ -192,14 +196,19 @@
       <div *ngIf="activeSection === 'appointments'" class="dashboard-section appointments-section">
         <div class="section-header">
           <h2>Gérer mes rendez-vous</h2>
-          <p>Consultez et gérez vos rendez-vous</p>
+          <p>Consultez et gérez vos rendez-vous avec les patients</p>
         </div>
         
         <!-- Only show appointment list, not calendar -->
         <div class="list-view">
+          <div class="appointment-heading">
+            <h3>Liste des rendez-vous avec les patients</h3>
+            <p>Tous vos rendez-vous sont affichés ci-dessous, triés par date.</p>
+          </div>
+          
           <app-appointment-list 
             [userRole]="'doctor'"
-            [limit]="20">
+            [limit]="0">
           </app-appointment-list>
           
           <div class="view-more-container">
@@ -215,7 +224,13 @@
       <div *ngIf="activeSection === 'calendar'" class="calendar-section">
         <div class="section-header">
           <h2>Calendrier des Rendez-vous</h2>
-          <p>Visualisez tous les rendez-vous sur une vue calendrier</p>
+          <div class="section-header-actions">
+            <p>Visualisez tous les rendez-vous sur une vue calendrier</p>
+            <button class="color-palette-button" (click)="showSettings()" matTooltip="Personnaliser les couleurs">
+              <mat-icon>palette</mat-icon>
+              <span>Personnaliser les couleurs</span>
+            </button>
+          </div>
         </div>
         <app-appointment-calendar [userRole]="'doctor'"></app-appointment-calendar>
       </div>
