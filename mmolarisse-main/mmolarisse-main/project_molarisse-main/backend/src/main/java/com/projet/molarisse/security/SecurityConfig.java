@@ -26,6 +26,7 @@ import java.util.Arrays;
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
     private final JwtFilter jwtAuthFilter;
+    private final JwtTokenParameterFilter jwtTokenParameterFilter;
     private final AuthenticationProvider authenticationProvider;
 
     @Bean
@@ -139,15 +140,22 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/update-time-by-doctor/{appointmentId}").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/update-time-by-secretary/{appointmentId}").hasRole("SECRETAIRE")
                         .requestMatchers("/api/doctor-verifications/pending").hasRole("ADMIN")
-                        .requestMatchers("/api/doctor-verifications/status/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/doctor-verifications/{verificationId}/status").hasRole("ADMIN")
                         .requestMatchers("/api/doctor-verifications/check/*").authenticated()
                         .requestMatchers("/api/doctor-verifications/approved").permitAll()
                         .requestMatchers("/api/doctor-verifications/**").hasRole("DOCTOR")
+                        
+                        // Document endpoints - secure but allow access to authenticated users
+                        .requestMatchers("/api/users/documents/cabinet_photos/**").permitAll()
+                        .requestMatchers("/api/users/documents/diploma_docs/**").permitAll()
+                        .requestMatchers("/api/users/documents/**").authenticated()
+                        
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtTokenParameterFilter, JwtFilter.class);
 
         return http.build();
     }

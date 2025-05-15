@@ -71,8 +71,8 @@ public class DoctorVerificationService {
         verification.setYearsOfExperience(request.getYearsOfExperience());
         verification.setSpecialties(request.getSpecialties());
         verification.setPostalCode(request.getPostalCode());
-        verification.setEmail(request.getEmail());
         verification.setCabinetName(request.getCabinetName());
+        verification.setEmail(request.getEmail());
         verification.setPhoneNumber(request.getPhoneNumber());
         verification.setMessage(request.getMessage());
         
@@ -138,18 +138,5 @@ public class DoctorVerificationService {
 
     public List<DoctorVerification> getAllVerifications() {
         return verificationRepository.findAll();
-    }
-
-    public Optional<DoctorVerification> findByEmail(String email) {
-        System.out.println("Service: Finding verification for email: " + email);
-        try {
-            Optional<DoctorVerification> result = verificationRepository.findByEmail(email);
-            System.out.println("Service: Found verification: " + result.isPresent());
-            return result;
-        } catch (Exception e) {
-            System.err.println("Service: Error finding verification: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        }
     }
 } 

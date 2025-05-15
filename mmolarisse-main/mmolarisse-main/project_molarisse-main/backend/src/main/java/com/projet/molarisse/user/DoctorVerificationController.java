@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.HashMap;
@@ -126,42 +127,19 @@ public class DoctorVerificationController {
         return ResponseEntity.ok(verification);
     }
 
-    @GetMapping("/check/{email}")
-    public ResponseEntity<?> checkDoctorApprovalStatus(@PathVariable String email) {
-        System.out.println("Checking approval status for email: " + email);
+    @GetMapping("/check-status/{doctorId}")
+    public ResponseEntity<?> checkDoctorApprovalStatus(@PathVariable Integer doctorId) {
         try {
-            // First, check if any verification exists with this email
-            List<DoctorVerification> allVerifications = verificationService.getAllVerifications();
-            System.out.println("Total verifications found: " + allVerifications.size());
-            
-            // Print all verifications for debugging
-            allVerifications.forEach(v -> {
-                System.out.println("Verification - Email: " + v.getEmail() + ", Status: " + v.getStatus());
-            });
-
-            Optional<DoctorVerification> verificationOpt = verificationService.findByEmail(email);
-            
-            if (verificationOpt.isEmpty()) {
-                System.out.println("No verification found for email: " + email);
+            // Get verification by doctorId
+            try {
+                DoctorVerification verification = verificationService.getVerificationByDoctorId(doctorId);
+                boolean isApproved = verification.getStatus() == DoctorVerification.VerificationStatus.APPROVED;
+                return ResponseEntity.ok(isApproved);
+            } catch (EntityNotFoundException e) {
+                // No verification found
                 return ResponseEntity.ok(false);
             }
-
-            DoctorVerification verification = verificationOpt.get();
-            System.out.println("Found verification with status: " + verification.getStatus());
-            
-            if (verification.getStatus() == null) {
-                System.out.println("Verification status is null");
-                return ResponseEntity.ok(false);
-            }
-
-            boolean isApproved = verification.getStatus() == DoctorVerification.VerificationStatus.APPROVED;
-            System.out.println("Is approved: " + isApproved);
-            
-            return ResponseEntity.ok(isApproved);
-            
         } catch (Exception e) {
-            System.err.println("Error in checkDoctorApprovalStatus: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body("Error checking verification status: " + e.getMessage());
         }
     }

@@ -17,9 +17,7 @@ import { ProfileComponent } from '../profile/profile.component';
 import { ValidateAccountComponent } from '../validate-account/validate-account.component';
 import { AppointmentCalendarComponent } from '../appointment-calendar/appointment-calendar.component';
 import { SecretaryApplicationsComponent } from '../doctor/secretary-applications/secretary-applications.component';
-import { DoctorVerificationComponent } from '../doctor/doctor-verification/doctor-verification.component';
 import { UserService } from '../core/services/user.service';
-import { DoctorVerificationService } from '../core/services/doctor-verification.service';
 import { jwtDecode } from 'jwt-decode';
 import { NotificationService } from '../core/services/notification.service';
 import { SecretaryRequestsComponent } from '../doctor/secretary-requests/secretary-requests.component';
@@ -28,7 +26,6 @@ import { AssignedSecretariesComponent } from '../doctor/assigned-secretaries/ass
 import { DoctorSecretaryViewComponent } from './appointment/doctor-secretary-view.component';
 import { AppointmentService } from '../core/services/appointment.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DoctorVerification } from '../core/models/doctor-verification.model';
 import { ProfileService } from '../profile/profile.service';
 import { environment } from '../../environments/environment';
 import { MatDividerModule } from '@angular/material/divider';
@@ -82,7 +79,6 @@ interface DecodedToken {
     ValidateAccountComponent,
     AppointmentCalendarComponent,
     SecretaryApplicationsComponent,
-    DoctorVerificationComponent,
     SecretaryRequestsComponent,
     UnassignedSecretariesComponent,
     AssignedSecretariesComponent,
@@ -100,7 +96,7 @@ export class DoctorDashboardComponent implements OnInit {
   activeSection = 'dashboard';
   isBaseRoute = true;
   hasAssignedSecretary = false;
-  isVerified = false;
+  isVerified = true; // Set to true by default since verification component is removed
   userProfileImage: string | null = null;
   userName: string = '';
   isProfileDropdownOpen: boolean = false;
@@ -117,7 +113,6 @@ export class DoctorDashboardComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private userService: UserService,
-    private doctorVerificationService: DoctorVerificationService,
     private notificationService: NotificationService,
     private appointmentService: AppointmentService,
     private profileService: ProfileService,
@@ -134,66 +129,12 @@ export class DoctorDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDoctorProfile();
-    this.checkDoctorVerification();
+    this.checkSecretaryAssignment();
     this.loadAppointmentStats();
     this.loadColorPreferences();
   }
 
-  checkDoctorVerification() {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      console.log('No token found in localStorage');
-      this.isVerified = false;
-      return;
-    }
-
-    try {
-      const decodedToken = jwtDecode(token) as any;
-      console.log('Decoded token:', decodedToken);
-      
-      const userId = decodedToken.id || decodedToken.userId || decodedToken.user_id;
-      console.log('Token decoded, userId:', userId);
-      
-      if (!userId) {
-        console.log('No user ID found in token. Token payload:', decodedToken);
-        this.isVerified = false;
-        return;
-      }
-
-      this.doctorVerificationService.getApprovedVerifications().subscribe({
-        next: (approvedDoctors) => {
-          console.log('Approved doctors:', approvedDoctors);
-          const userIdNum = Number(userId);
-          const isApproved = approvedDoctors.some(doc => doc.doctorId === userIdNum);
-          console.log('Doctor approval status for ID', userIdNum, ':', isApproved);
-          this.isVerified = isApproved;
-          
-          if (isApproved) {
-            this.checkSecretaryAssignment();
-          } else {
-            this.hasAssignedSecretary = false;
-            if (this.activeSection !== 'home' && this.activeSection !== 'profile' && this.activeSection !== 'verification') {
-              this.router.navigate(['/dashboard/doctor']);
-            }
-          }
-        },
-        error: (error) => {
-          console.error('Error checking verification:', error);
-          this.isVerified = false;
-        }
-      });
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      this.isVerified = false;
-    }
-  }
-
   checkSecretaryAssignment(): void {
-    if (!this.isVerified) {
-      this.hasAssignedSecretary = false;
-      return;
-    }
-
     this.userService.getAssignedSecretaries().subscribe({
       next: (secretaries) => {
         this.hasAssignedSecretary = secretaries && secretaries.length > 0;
@@ -242,27 +183,10 @@ export class DoctorDashboardComponent implements OnInit {
     this.activeSection = 'secretary-applications';
   }
 
-  showVerification() {
-    this.activeSection = 'verification';
-  }
-
   logout() {
     console.log('Logging out...');
-    // First clear any component state
-    this.activeSection = 'dashboard';
-    this.isProfileDropdownOpen = false;
-    this.isMenuOpen = true;
-    this.isVerified = false;
-    this.hasAssignedSecretary = false;
-    
-    // Call auth service logout
     this.authService.logout();
-    
-    // Use router for navigation to ensure proper cleanup
-    this.router.navigate(['/login']).then(() => {
-      // Force page refresh to clear any remaining state
-      window.location.reload();
-    });
+    this.router.navigate(['/login']);
   }
 
   toggleProfileDropdown(): void {

@@ -15,11 +15,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../services/auth.service';
 import { ProfileComponent } from '../profile/profile.component';
-import { DoctorVerificationsAdminComponent } from '../admin/doctor-verifications-admin/doctor-verifications-admin.component';
 import { AdminService } from '../services/admin.service';
 import { DoctorService, SecretaryRequest } from '../services/doctor.service';
 import { MessageBellComponent } from '../shared/message-bell/message-bell.component';
 import { MessagingComponent } from '../messaging/messaging.component';
+import { DoctorVerificationsAdminComponent } from '../admin/doctor-verifications-admin/doctor-verifications-admin.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -39,9 +39,9 @@ import { MessagingComponent } from '../messaging/messaging.component';
     MatSnackBarModule,
     FormsModule,
     ProfileComponent,
-    DoctorVerificationsAdminComponent,
     MessageBellComponent,
-    MessagingComponent
+    MessagingComponent,
+    DoctorVerificationsAdminComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.scss']
@@ -56,12 +56,21 @@ export class AdminDashboardComponent implements OnInit {
   currentUser: User | null = null;
   notificationCount = 0;
   secretaryRequests: SecretaryRequest[] = [];
+  pendingSecretaryRequests: SecretaryRequest[] = [];
   loading = false;
   error: string | null = null;
-  stats = {
+  stats: {
+    pendingVerifications: number;
+    totalDoctors: number;
+    totalPatients: number;
+    totalUsers: number;
+    totalAppointments: number;
+  } = {
     pendingVerifications: 0,
     totalDoctors: 0,
-    totalPatients: 0
+    totalPatients: 0,
+    totalUsers: 0,
+    totalAppointments: 0
   };
 
   constructor(
@@ -104,11 +113,6 @@ export class AdminDashboardComponent implements OnInit {
     this.activeSection = 'dashboard';
   }
 
-  showDoctorVerifications(): void {
-    this.activeSection = 'verifications';
-    this.loadSecretaryRequests(); // Reload secretary requests when showing verifications
-  }
-
   showProfile(): void {
     this.activeSection = 'profile';
     this.isProfileDropdownOpen = false;
@@ -116,6 +120,11 @@ export class AdminDashboardComponent implements OnInit {
 
   showSettings(): void {
     this.activeSection = 'settings';
+    this.isProfileDropdownOpen = false;
+  }
+
+  showVerifications(): void {
+    this.activeSection = 'verifications';
     this.isProfileDropdownOpen = false;
   }
 
@@ -147,14 +156,16 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadStats(): void {
-    this.adminService.getStats().subscribe({
-      next: (stats) => {
-        this.stats = stats;
-      },
-      error: (error) => {
-        console.error('Error loading stats:', error);
-      }
-    });
+    // Simulate loading stats (should be replaced with actual API calls)
+    setTimeout(() => {
+      this.stats = {
+        pendingVerifications: Math.floor(Math.random() * 10),
+        totalDoctors: Math.floor(Math.random() * 100) + 50,
+        totalPatients: Math.floor(Math.random() * 500) + 200,
+        totalUsers: Math.floor(Math.random() * 1000) + 500,
+        totalAppointments: Math.floor(Math.random() * 2000) + 1000
+      };
+    }, 1000);
   }
 
   loadNotifications(): void {
@@ -177,6 +188,7 @@ export class AdminDashboardComponent implements OnInit {
       next: (requests) => {
         console.log('Received secretary requests:', requests);
         this.secretaryRequests = requests;
+        this.pendingSecretaryRequests = requests.filter(r => r.status === 'PENDING');
         this.loading = false;
       },
       error: (err) => {

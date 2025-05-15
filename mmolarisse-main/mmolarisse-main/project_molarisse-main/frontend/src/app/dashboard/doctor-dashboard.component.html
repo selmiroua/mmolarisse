@@ -27,13 +27,6 @@
         <span>Mon Profil</span>
       </a>
 
-      <a class="nav-link" (click)="showVerification()" [class.active]="activeSection === 'verification'">
-        <div class="nav-icon">
-          <i class="fas fa-check-circle"></i>
-        </div>
-        <span>Vérification</span>
-      </a>
-
       <a class="nav-link" (click)="showAppointments()" [class.active]="activeSection === 'appointments'">
         <div class="nav-icon">
           <i class="fas fa-calendar-check"></i>
@@ -185,11 +178,6 @@
       <!-- Profile View -->
       <div *ngIf="activeSection === 'profile'">
         <app-profile></app-profile>
-      </div>
-
-      <!-- Verification View -->
-      <div *ngIf="activeSection === 'verification'">
-        <app-doctor-verification></app-doctor-verification>
       </div>
 
       <!-- Appointments View -->

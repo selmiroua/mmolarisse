@@ -16,7 +16,6 @@ import { ProfileComponent } from './profile/profile.component';
 import { BookAppointmentComponent } from './dashboard/appointment/book-appointment.component';
 import { AppointmentListComponent } from './dashboard/appointment/appointment-list.component';
 import { DoctorApplicationComponent } from './secretary/doctor-application/doctor-application.component';
-import { DoctorVerificationsAdminComponent } from './admin/doctor-verifications-admin/doctor-verifications-admin.component';
 import { LandingComponent } from './landing/landing.component';
 import { EspaceSecComponent } from './secretary/espace-sec/espace-sec.component';
 import { AppointmentTabsComponent } from './dashboard/appointment/appointment-tabs.component';
@@ -74,15 +73,7 @@ export const routes: Routes = [
     path: 'dashboard/admin',
     component: AdminDashboardComponent,
     canActivate: [AuthGuard],
-    data: { role: 'admin' },
-    children: [
-      {
-        path: 'doctor-verifications',
-        component: DoctorVerificationsAdminComponent,
-        canActivate: [AuthGuard],
-        data: { role: 'ADMIN' }
-      }
-    ]
+    data: { role: 'admin' }
   },
   {
     path: 'dashboard/doctor',

@@ -41,6 +41,17 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   --mdc-protected-button-container-shape: 25px;
 }
 
+// Doctor verification dialog styles
+.doctor-detail-dialog-container .mat-mdc-dialog-container {
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  
+  .mdc-dialog__surface {
+    overflow: hidden !important;
+  }
+}
+
 // Custom style for the secretary profile dialog
 .mat-mdc-dialog-container.secretary-profile-dialog {
   .mdc-dialog__surface {
@@ -219,4 +230,40 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .color-palette-dialog-container .mdc-dialog__surface {
   border-radius: 12px !important;
   overflow: hidden !important;
+}
+
+/* Add CSS for image placeholders */
+.image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f1f5f9;
+  border-radius: 0.5rem;
+  min-height: 120px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  
+  mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  &.full-size {
+    min-height: 300px;
+    padding: 2rem;
+    
+    mat-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    span {
+      font-size: 1rem;
+    }
+  }
 }

@@ -12,6 +12,4 @@ public interface DoctorVerificationRepository extends JpaRepository<DoctorVerifi
     Optional<DoctorVerification> findByDoctorId(Integer doctorId);
     
     List<DoctorVerification> findByStatus(DoctorVerification.VerificationStatus status);
-
-    Optional<DoctorVerification> findByEmail(String email);
 } 

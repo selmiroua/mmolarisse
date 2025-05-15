@@ -100,11 +100,10 @@ export class DoctorVerificationService {
     
     // Create an array of possible API endpoints to try
     const endpoints = [
-      `${this.apiUrl}/${verificationId}/status`,
+      `${environment.apiUrl}/api/v1/api/doctor-verifications/${verificationId}/status`,
       `${environment.apiUrl}/api/v1/admin/doctor-verifications/${verificationId}/status`,
-      `${environment.apiUrl}/api/doctor-verifications/${verificationId}/status`,
-      `${environment.apiUrl}/api/v1/users/doctor-verifications/${verificationId}/status`,
-      `${environment.apiUrl}/api/v1/doctor-verifications/status/${verificationId}`
+      `${this.apiUrl}/${verificationId}/status`,
+      `${environment.apiUrl}/api/v1/users/doctor-verifications/${verificationId}/status`
     ];
     
     // Try each endpoint in sequence until one works

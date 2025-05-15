@@ -2,6 +2,9 @@ package com.projet.molarisse.handler;
 
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
+import org.apache.catalina.connector.ClientAbortException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,6 +23,19 @@ import static org.springframework.http.HttpStatus.*;
 @RestControllerAdvice
 
 public class GlobalExceptionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    
+    /**
+     * Handle client connection abort exceptions - common when streaming PDF files
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public ResponseEntity<Void> handleClientAbortException(ClientAbortException e) {
+        logger.debug("Client aborted connection: {}", e.getMessage());
+        // Just return a 200 OK with no content - this won't actually be sent to the client
+        // because they've already disconnected, but prevents excessive error logging
+        return ResponseEntity.ok().build();
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleException(EntityNotFoundException exp) {
         return ResponseEntity

@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,11 +32,10 @@ public class DoctorVerificationRequest {
     private String postalCode;
     
     @NotBlank
-    @Email
-    private String email;
+    private String cabinetName;
     
     @NotBlank
-    private String cabinetName;
+    private String email;
     
     @NotBlank
     private String phoneNumber;

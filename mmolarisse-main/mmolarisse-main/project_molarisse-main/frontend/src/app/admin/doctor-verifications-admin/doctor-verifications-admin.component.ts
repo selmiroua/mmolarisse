@@ -1,380 +1,745 @@
-import { Component, OnInit, Input } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { DoctorVerificationService } from '../../core/services/doctor-verification.service';
-import { DoctorVerification } from '../../core/models/doctor-verification.model';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { DoctorVerificationService } from '../../core/services/doctor-verification.service';
+import { DoctorVerification } from '../../core/models/doctor-verification.model';
 import { environment } from '../../../environments/environment';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { catchError, of, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { ConfirmationDialogComponent } from './confirmation-dialog.component';
+import { DoctorDetailDialogComponent } from './doctor-detail-dialog.component';
 
 @Component({
   selector: 'app-doctor-verifications-admin',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatTooltipModule
+  ],
   template: `
-    <div class="doctor-verification-requests">
-      <h2>Vérifications des Médecins</h2>
-      
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Chargement des demandes...</p>
+    <div class="doctor-verification-page">
+      <div class="page-header">
+        <h1>Demandes de vérification</h1>
+        <p>Vérifiez et approuvez les demandes de vérification des médecins.</p>
       </div>
       
-      <div *ngIf="!loading" class="requests-container">
-        <mat-card *ngFor="let request of pendingVerifications" class="request-card">
-          <mat-card-header>
-            <div class="header-content">
-              <mat-card-title>Dr. ID: {{ request.doctorId }}</mat-card-title>
-              <mat-card-subtitle>{{ request.email }}</mat-card-subtitle>
-              <div class="status-badge" [class.pending]="true">En attente</div>
-            </div>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="info-grid">
-              <div class="info-item">
-                <mat-icon>business</mat-icon>
-                <div class="info-content">
-                  <label>Cabinet</label>
-                  <p>{{ request.cabinetName || 'Non spécifié' }}</p>
+      <div class="loading-container" *ngIf="loading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Chargement des demandes de vérification...</p>
+      </div>
+      
+      <div class="verifications-container" *ngIf="!loading">
+        <div *ngIf="pendingVerifications.length === 0" class="no-verifications">
+          <mat-icon>check_circle</mat-icon>
+          <h3>Aucune demande en attente</h3>
+          <p>Toutes les demandes de vérification ont été traitées.</p>
+        </div>
+        
+        <div class="verifications-grid" *ngIf="pendingVerifications.length > 0">
+          <mat-card *ngFor="let verification of pendingVerifications" class="verification-card">
+            <mat-card-header>
+              <div class="header-content">
+                <div class="avatar-placeholder">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="doctor-info">
+                  <div class="doctor-name">ID: {{ verification.doctorId }}</div>
+                  <div class="doctor-email">{{ verification.email }}</div>
+                  <div class="doctor-phone">{{ verification.phoneNumber || 'Pas de téléphone' }}</div>
+                </div>
+                <div class="status-badge" [ngClass]="verification.status">
+                  {{ getStatusLabel(verification.status) }}
                 </div>
               </div>
-              <div class="info-item">
-                <mat-icon>phone</mat-icon>
-                <div class="info-content">
-                  <label>Téléphone</label>
-                  <p>{{ request.phoneNumber || 'Non spécifié' }}</p>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="verification-details">
+                <div class="detail-row">
+                  <mat-icon>business</mat-icon>
+                  <div class="detail-content">
+                    <span class="detail-label">Cabinet</span>
+                    <span class="detail-value">{{ verification.cabinetName || 'Non spécifié' }}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-row">
+                  <mat-icon>place</mat-icon>
+                  <div class="detail-content">
+                    <span class="detail-label">Adresse</span>
+                    <span class="detail-value">{{ verification.cabinetAddress || 'Non spécifiée' }}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-row">
+                  <mat-icon>star</mat-icon>
+                  <div class="detail-content">
+                    <span class="detail-label">Expérience</span>
+                    <span class="detail-value">{{ verification.yearsOfExperience || '0' }} ans</span>
+                  </div>
+                </div>
+                
+                <div class="chips-container" *ngIf="verification.specialties?.length">
+                  <span class="chip" *ngFor="let specialty of verification.specialties.slice(0, 3)">
+                    {{ specialty }}
+                  </span>
+                  <span class="more-chip" *ngIf="verification.specialties.length > 3">
+                    +{{ verification.specialties.length - 3 }}
+                  </span>
                 </div>
               </div>
-              <div class="info-item">
-                <mat-icon>star</mat-icon>
-                <div class="info-content">
-                  <label>Années d'expérience</label>
-                  <p>{{ request.yearsOfExperience || '0' }} ans</p>
-                </div>
-              </div>
-              <div class="info-item">
-                <mat-icon>medical_services</mat-icon>
-                <div class="info-content">
-                  <label>Spécialité(s)</label>
-                  <p>{{ request.specialties?.join(', ') || 'Non spécifié' }}</p>
-                </div>
-              </div>
-              <div class="info-item">
-                <mat-icon>calendar_today</mat-icon>
-                <div class="info-content">
-                  <label>Date de demande</label>
-                  <p>{{ request.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
-                </div>
-              </div>
-              <div class="info-item" *ngIf="request.message">
-                <mat-icon>message</mat-icon>
-                <div class="info-content">
-                  <label>Message</label>
-                  <p>{{ request.message }}</p>
-                </div>
-              </div>
-              <div class="info-item" *ngIf="request.cabinetPhotoPath">
-                <mat-icon>business</mat-icon>
-                <div class="info-content">
-                  <label>Photo du cabinet</label>
-                  <a (click)="viewDocument(request.cabinetPhotoPath)" class="doc-link">
+              
+              <div class="documents-preview">
+                <div class="document-thumbnail" *ngIf="verification.cabinetPhotoPath" (click)="viewDocumentDetails(verification)">
+                  <div class="thumbnail-overlay">
                     <mat-icon>visibility</mat-icon>
-                    Consulter la photo
-                  </a>
+                  </div>
+                  <ng-container *ngIf="isPdf(verification.cabinetPhotoPath); else cabinetImage">
+                    <div class="pdf-thumbnail">
+                      <mat-icon>picture_as_pdf</mat-icon>
+                      <span>PDF</span>
+                    </div>
+                  </ng-container>
+                  <ng-template #cabinetImage>
+                    <ng-container *ngIf="checkImageValid(verification.cabinetPhotoPath); else cabinetPlaceholder">
+                      <img [src]="getDocumentUrl(verification.cabinetPhotoPath)" alt="Cabinet" 
+                           (error)="handleImageError($event)" 
+                           onerror="this.style.display='none'">
+                    </ng-container>
+                  </ng-template>
+                  <ng-template #cabinetPlaceholder>
+                    <div class="image-placeholder">
+                      <mat-icon>image_not_supported</mat-icon>
+                      <span>Image non disponible</span>
+                    </div>
+                  </ng-template>
+                  <span class="thumbnail-label">Cabinet</span>
                 </div>
-              </div>
-              <div class="info-item" *ngIf="request.diplomaPhotoPath">
-                <mat-icon>description</mat-icon>
-                <div class="info-content">
-                  <label>Diplôme</label>
-                  <a (click)="viewDocument(request.diplomaPhotoPath)" class="doc-link">
+                
+                <div class="document-thumbnail" *ngIf="verification.diplomaPhotoPath" (click)="viewDocumentDetails(verification)">
+                  <div class="thumbnail-overlay">
                     <mat-icon>visibility</mat-icon>
-                    Consulter le diplôme
-                  </a>
+                  </div>
+                  <ng-container *ngIf="isPdf(verification.diplomaPhotoPath); else diplomaImage">
+                    <div class="pdf-thumbnail">
+                      <mat-icon>picture_as_pdf</mat-icon>
+                      <span>PDF</span>
+                    </div>
+                  </ng-container>
+                  <ng-template #diplomaImage>
+                    <ng-container *ngIf="checkImageValid(verification.diplomaPhotoPath); else diplomaPlaceholder">
+                      <img [src]="getDocumentUrl(verification.diplomaPhotoPath)" alt="Diplôme" 
+                           (error)="handleImageError($event)"
+                           onerror="this.style.display='none'">
+                    </ng-container>
+                  </ng-template>
+                  <ng-template #diplomaPlaceholder>
+                    <div class="image-placeholder">
+                      <mat-icon>image_not_supported</mat-icon>
+                      <span>Image non disponible</span>
+                    </div>
+                  </ng-template>
+                  <span class="thumbnail-label">Diplôme</span>
+                </div>
+                
+                <div class="no-documents" *ngIf="!verification.cabinetPhotoPath && !verification.diplomaPhotoPath">
+                  <mat-icon>no_photography</mat-icon>
+                  <span>Aucun document</span>
                 </div>
               </div>
-            </div>
-          </mat-card-content>
-          <mat-card-actions>
-            <button mat-raised-button color="primary" (click)="approveVerification(request)" class="action-button">
-              <mat-icon>check_circle</mat-icon>
-              Approuver
-            </button>
-            <button mat-raised-button color="accent" (click)="directApproveVerification(request)" class="action-button" matTooltip="Méthode alternative">
-              <mat-icon>security</mat-icon>
-              Approuver (Alt)
-            </button>
-            <button mat-raised-button color="warn" (click)="rejectVerification(request)" class="action-button">
-              <mat-icon>cancel</mat-icon>
-              Rejeter
-            </button>
-          </mat-card-actions>
-        </mat-card>
-
-        <div *ngIf="pendingVerifications.length === 0" class="no-requests">
-          <mat-icon>info</mat-icon>
-          <p>Aucune demande en attente</p>
+            </mat-card-content>
+            
+            <mat-card-actions>
+              <button mat-stroked-button color="primary" (click)="viewDocumentDetails(verification)">
+                <mat-icon>visibility</mat-icon>
+                <span>Détails</span>
+              </button>
+              
+              <div class="action-buttons">
+                <button mat-raised-button color="primary" (click)="openApproveDialog(verification)">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Approuver</span>
+                </button>
+                
+                <button mat-raised-button color="warn" (click)="openRejectDialog(verification)">
+                  <mat-icon>cancel</mat-icon>
+                  <span>Refuser</span>
+                </button>
+              </div>
+            </mat-card-actions>
+          </mat-card>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .doctor-verification-requests {
+    .doctor-verification-page {
       padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      overflow-y: auto;
+      height: 100%;
     }
-
-    h2 {
-      color: #2c3e50;
+    
+    .page-header {
       margin-bottom: 2rem;
-      font-size: 1.8rem;
-      font-weight: 500;
+      
+      h1 {
+        font-size: 1.75rem;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+      
+      p {
+        color: #64748b;
+        font-size: 1rem;
+        margin: 0;
+      }
     }
-
+    
+    .verifications-container {
+      overflow-y: auto;
+      height: calc(100% - 80px);
+    }
+    
     .loading-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
+      padding: 4rem;
       
       p {
-        margin-top: 1rem;
-        color: #546e7a;
+        margin-top: 1.5rem;
+        color: #64748b;
       }
     }
-
-    .requests-container {
+    
+    .no-verifications {
+      background-color: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 4rem 2rem;
+      text-align: center;
+      
+      mat-icon {
+        font-size: 4rem;
+        width: 4rem;
+        height: 4rem;
+        color: #10b981;
+        margin-bottom: 1.5rem;
+      }
+      
+      h3 {
+        font-size: 1.5rem;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+        font-weight: 500;
+      }
+      
+      p {
+        color: #64748b;
+        font-size: 1rem;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+    }
+    
+    .verifications-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
       gap: 1.5rem;
     }
-
-    .request-card {
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    .verification-card {
+      border-radius: 0.75rem;
       overflow: hidden;
-
+      transition: transform 0.2s, box-shadow 0.2s;
+      
       &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       }
-
-      .header-content {
-        position: relative;
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-bottom: 1px solid #dee2e6;
+      
+      mat-card-header {
+        padding: 0;
+        
+        .header-content {
+          width: 100%;
+          padding: 1.25rem;
+          background: linear-gradient(to right, #f8fafc, #f1f5f9);
+          display: flex;
+          align-items: center;
+          position: relative;
+          
+          .avatar-placeholder {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            
+            mat-icon {
+              color: #94a3b8;
+            }
+          }
+          
+          .doctor-info {
+            .doctor-name {
+              font-weight: 500;
+              color: #1e293b;
+              font-size: 1rem;
+              margin-bottom: 0.25rem;
+            }
+            
+            .doctor-email, .doctor-phone {
+              color: #64748b;
+              font-size: 0.875rem;
+            }
+          }
+          
+          .status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            
+            &.pending {
+              background-color: #fff3cd;
+              color: #856404;
+            }
+            
+            &.approved {
+              background-color: #d1e7dd;
+              color: #0f5132;
+            }
+            
+            &.rejected {
+              background-color: #f8d7da;
+              color: #842029;
+            }
+          }
+        }
       }
-
-      mat-card-title {
-        font-size: 1.3rem;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
+      
+      mat-card-content {
+        padding: 1.25rem;
+        
+        .verification-details {
+          margin-bottom: 1.25rem;
+          
+          .detail-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            
+            mat-icon {
+              color: #0ea5e9;
+              margin-right: 0.75rem;
+              font-size: 1.25rem;
+              width: 1.25rem;
+              height: 1.25rem;
+            }
+            
+            .detail-content {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              
+              .detail-label {
+                font-size: 0.75rem;
+                color: #64748b;
+                margin-bottom: 0.125rem;
+              }
+              
+              .detail-value {
+                color: #334155;
+                font-size: 0.875rem;
+                line-height: 1.25;
+              }
+            }
+          }
+          
+          .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            
+            .chip, .more-chip {
+              padding: 0.25rem 0.75rem;
+              border-radius: 16px;
+              font-size: 0.75rem;
+              background-color: #f1f5f9;
+              color: #475569;
+            }
+          }
+        }
+        
+        .documents-preview {
+          display: flex;
+          gap: 1rem;
+          
+          .document-thumbnail {
+            width: calc(50% - 0.5rem);
+            height: 120px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            
+            .thumbnail-overlay {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(0, 0, 0, 0.4);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0;
+              transition: opacity 0.2s;
+              
+              mat-icon {
+                color: white;
+                font-size: 2rem;
+                width: 2rem;
+                height: 2rem;
+              }
+            }
+            
+            .thumbnail-label {
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              padding: 0.5rem;
+              background-color: rgba(0, 0, 0, 0.6);
+              color: white;
+              font-size: 0.75rem;
+              text-align: center;
+            }
+            
+            &:hover .thumbnail-overlay {
+              opacity: 1;
+            }
+          }
+          
+          .no-documents {
+            width: 100%;
+            height: 120px;
+            border-radius: 0.5rem;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            
+            mat-icon {
+              color: #cbd5e1;
+              margin-bottom: 0.5rem;
+            }
+            
+            span {
+              color: #94a3b8;
+              font-size: 0.875rem;
+            }
+          }
+        }
       }
-
-      mat-card-subtitle {
-        color: #546e7a;
-        font-size: 1rem;
-      }
-
-      .status-badge {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-
-        &.pending {
-          background-color: #fff3cd;
-          color: #856404;
+      
+      mat-card-actions {
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        background-color: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        
+        button {
+          display: flex;
+          align-items: center;
+          
+          mat-icon {
+            margin-right: 0.5rem;
+          }
+        }
+        
+        .action-buttons {
+          display: flex;
+          gap: 0.75rem;
         }
       }
     }
-
-    .info-grid {
-      display: grid;
-      gap: 1.2rem;
-      padding: 1.5rem;
-    }
-
-    .info-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-
-      mat-icon {
-        color: #00acc1;
-        font-size: 1.2rem;
-        width: 1.2rem;
-        height: 1.2rem;
-        margin-top: 0.2rem;
-      }
-
-      .info-content {
-        flex: 1;
-
-        label {
-          display: block;
-          font-size: 0.85rem;
-          color: #6c757d;
-          margin-bottom: 0.3rem;
-        }
-
-        p {
-          margin: 0;
-          color: #2c3e50;
-          font-size: 1rem;
-        }
-      }
-    }
-
-    .doc-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #00acc1;
-      text-decoration: none;
-      cursor: pointer;
-      padding: 0.3rem 0;
-
-      &:hover {
-        color: #007c91;
-      }
-
-      mat-icon {
-        font-size: 1.1rem;
-        width: 1.1rem;
-        height: 1.1rem;
-        color: inherit;
-      }
-    }
-
-    mat-card-actions {
-      display: flex;
-      gap: 1rem;
-      padding: 1.5rem;
-      background: #f8f9fa;
-      border-top: 1px solid #dee2e6;
-    }
-
-    .action-button {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      font-weight: 500;
-
-      mat-icon {
-        font-size: 1.1rem;
-        width: 1.1rem;
-        height: 1.1rem;
-      }
-    }
-
-    .no-requests {
-      grid-column: 1 / -1;
+    
+    .pdf-thumbnail {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 3rem;
-      background: #f8f9fa;
-      border-radius: 12px;
-      color: #546e7a;
-
+      justify-content: center;
+      background-color: #f8fafc;
+      width: 100%;
+      height: 100%;
+      min-height: 80px;
+      border-radius: 0.375rem;
+      
       mat-icon {
-        font-size: 3.5rem;
-        width: 3.5rem;
-        height: 3.5rem;
-        margin-bottom: 1.5rem;
-        color: #00acc1;
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: #ef4444;
       }
-
-      p {
-        font-size: 1.2rem;
-        margin: 0;
+      
+      span {
+        font-size: 12px;
+        margin-top: 4px;
+        font-weight: 500;
       }
     }
-  `],
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatCardModule,
-    MatDialogModule,
-    MatChipsModule,
-    MatTooltipModule
-  ]
+  `]
 })
 export class DoctorVerificationsAdminComponent implements OnInit {
-  @Input() limit?: number;
   pendingVerifications: DoctorVerification[] = [];
   loading = true;
-
+  private validImages: Map<string, boolean> = new Map();
+  
   constructor(
     private verificationService: DoctorVerificationService,
-    private snackBar: MatSnackBar,
+    private http: HttpClient,
     private dialog: MatDialog,
-    private http: HttpClient
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
     this.loadPendingVerifications();
   }
-
+  
   loadPendingVerifications(): void {
     this.loading = true;
-    let url = `${environment.apiUrl}/admin/verifications`;
-    if (this.limit) {
-      url += `?limit=${this.limit}`;
-    }
     
-    this.http.get<DoctorVerification[]>(url).subscribe({
+    // First try using the service method
+    this.verificationService.getPendingVerifications().subscribe({
       next: (verifications) => {
         this.pendingVerifications = verifications;
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading pending verifications:', error);
-        this.snackBar.open('Erreur lors du chargement des vérifications en attente', 'Fermer', {
-          duration: 5000
-        });
-        this.loading = false;
+        console.error('Error from service method:', error);
+        // Fallback to direct API call with multiple endpoints
+        this.tryAlternativeEndpoints();
       }
     });
   }
-
-  viewDocument(filePath: string): void {
-    const docUrl = `${environment.apiUrl}/api/users/documents/${filePath}`;
-    window.open(docUrl, '_blank');
+  
+  tryAlternativeEndpoints(): void {
+    // Define multiple possible API endpoints
+    const possibleEndpoints = [
+      `${environment.apiUrl}/api/v1/admin/doctor-verifications/pending`,
+      `${environment.apiUrl}/admin/verifications`,
+      `${environment.apiUrl}/api/admin/doctor-verifications`
+    ];
+    
+    // Try each endpoint sequentially
+    this.tryEndpoint(possibleEndpoints, 0);
   }
-
+  
+  tryEndpoint(endpoints: string[], index: number): void {
+    if (index >= endpoints.length) {
+      this.handleLoadError('Tous les endpoints ont échoué');
+      return;
+    }
+    
+    const endpoint = endpoints[index];
+    console.log(`Trying endpoint (${index + 1}/${endpoints.length}): ${endpoint}`);
+    
+    this.http.get<DoctorVerification[]>(endpoint).subscribe({
+      next: (verifications) => {
+        this.pendingVerifications = verifications;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error(`Endpoint ${index + 1} failed:`, error);
+        // Try the next endpoint
+        this.tryEndpoint(endpoints, index + 1);
+      }
+    });
+  }
+  
+  handleLoadError(message: string): void {
+    console.error(message);
+    this.snackBar.open('Erreur lors du chargement des vérifications', 'Fermer', {
+      duration: 5000
+    });
+    this.loading = false;
+    this.pendingVerifications = [];
+  }
+  
+  getStatusLabel(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'pending': return 'En attente';
+      case 'approved': return 'Approuvé';
+      case 'rejected': return 'Refusé';
+      default: return status;
+    }
+  }
+  
+  getDocumentUrl(path: string): string {
+    if (!path) return 'assets/images/image-not-available.png';
+    
+    // Get the base URL without any API path
+    const baseUrl = environment.apiUrl; // e.g. "http://localhost:8080"
+    
+    // Add authorization token to the URL as a query parameter
+    const token = this.getAuthToken();
+    const authParam = token ? `?token=${encodeURIComponent(token)}` : '';
+    
+    // Log for debugging
+    console.log(`Building URL for path: ${path}`);
+    
+    // Create the full document URL
+    let documentUrl;
+    
+    // Check if the path already includes the full structure
+    if (path.includes('/')) {
+      // It already has a directory structure, use as is
+      documentUrl = `${baseUrl}/api/v1/api/users/documents/${path}${authParam}`;
+    } 
+    // Check file extension to determine document type
+    else if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
+      // It's a cabinet photo
+      documentUrl = `${baseUrl}/api/v1/api/users/documents/cabinet_photos/${path}${authParam}`;
+    } 
+    else if (path.endsWith('.pdf')) {
+      // It's a diploma document
+      documentUrl = `${baseUrl}/api/v1/api/users/documents/diploma_docs/${path}${authParam}`;
+    } 
+    else {
+      // Default case
+      documentUrl = `${baseUrl}/api/v1/api/users/documents/${path}${authParam}`;
+    }
+    
+    console.log(`Final document URL: ${documentUrl}`);
+    return documentUrl;
+  }
+  
+  private getAuthToken(): string | null {
+    // Try to get the token from localStorage with multiple possible keys
+    let token = localStorage.getItem('access_token');
+    
+    if (!token) {
+      token = localStorage.getItem('auth_token');
+    }
+    
+    if (!token) {
+      token = localStorage.getItem('token');
+    }
+    
+    if (!token) {
+      // Log this for troubleshooting
+      console.error('No authentication token found in localStorage');
+    } else {
+      console.log('Found token:', token.substring(0, 20) + '...');
+    }
+    
+    return token;
+  }
+  
+  handleImageError(event: any): void {
+    console.log('Image loading error:', event);
+    
+    // Extract the path from the src URL
+    const src = event.target.src;
+    const urlObj = new URL(src);
+    const pathMatch = urlObj.pathname.match(/\/api\/.*\/documents\/(.+)$/);
+    
+    if (pathMatch && pathMatch[1]) {
+      // Mark this image path as invalid
+      this.validImages.set(pathMatch[1], false);
+    }
+    
+    // Hide the broken image
+    event.target.style.display = 'none';
+  }
+  
+  viewDocumentDetails(verification: DoctorVerification): void {
+    this.dialog.open(DoctorDetailDialogComponent, {
+      data: verification,
+      width: '800px',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'doctor-detail-dialog-container'
+    });
+  }
+  
+  openApproveDialog(verification: DoctorVerification): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '500px',
+      data: {
+        action: 'approve',
+        doctorInfo: `ID: ${verification.doctorId} - ${verification.email}`
+      }
+    });
+    
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.approveVerification(verification);
+      }
+    });
+  }
+  
+  openRejectDialog(verification: DoctorVerification): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '500px',
+      data: {
+        action: 'reject',
+        doctorInfo: `ID: ${verification.doctorId} - ${verification.email}`
+      }
+    });
+    
+    dialogRef.afterClosed().subscribe(message => {
+      if (message !== undefined) {
+        this.rejectVerification(verification, message);
+      }
+    });
+  }
+  
   approveVerification(verification: DoctorVerification): void {
     if (!verification.id) {
       this.snackBar.open('ID de vérification manquant', 'Fermer', { duration: 3000 });
       return;
     }
-
+    
     this.snackBar.open('Approbation en cours...', '', { duration: 2000 });
-    console.log(`Approving verification ID: ${verification.id}`);
     
     this.verificationService.updateVerificationStatus(verification.id, 'approved')
       .subscribe({
         next: (response) => {
-          console.log('Approval successful:', response);
           this.snackBar.open('Vérification approuvée avec succès', 'Fermer', {
             duration: 3000
           });
@@ -382,121 +747,52 @@ export class DoctorVerificationsAdminComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error approving verification:', error);
-          let errorMsg = 'Erreur lors de l\'approbation de la vérification';
-          
-          if (error.status === 403) {
-            errorMsg = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
-          } else if (error.error && error.error.message) {
-            errorMsg = `Erreur: ${error.error.message}`;
-          }
-          
-          this.snackBar.open(errorMsg, 'Fermer', {
+          this.snackBar.open('Erreur lors de l\'approbation', 'Fermer', {
             duration: 5000
           });
         }
       });
   }
-
-  rejectVerification(verification: DoctorVerification): void {
+  
+  rejectVerification(verification: DoctorVerification, message: string): void {
     if (!verification.id) {
       this.snackBar.open('ID de vérification manquant', 'Fermer', { duration: 3000 });
       return;
     }
-
-    const reason = prompt('Veuillez entrer la raison du rejet:');
-    if (reason !== null) {
-      this.snackBar.open('Rejet en cours...', '', { duration: 2000 });
-      console.log(`Rejecting verification ID: ${verification.id} with reason: ${reason}`);
-
-      this.verificationService.updateVerificationStatus(verification.id, 'rejected', reason)
-        .subscribe({
-          next: (response) => {
-            console.log('Rejection successful:', response);
-            this.snackBar.open('Vérification rejetée avec succès', 'Fermer', {
-              duration: 3000
-            });
-            this.loadPendingVerifications();
-          },
-          error: (error) => {
-            console.error('Error rejecting verification:', error);
-            let errorMsg = 'Erreur lors du rejet de la vérification';
-            
-            if (error.status === 403) {
-              errorMsg = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
-            } else if (error.error && error.error.message) {
-              errorMsg = `Erreur: ${error.error.message}`;
-            }
-            
-            this.snackBar.open(errorMsg, 'Fermer', {
-              duration: 5000
-            });
-          }
-        });
-    }
-  }
-
-  // Add a method that attempts to use a different API path for approval
-  directApproveVerification(verification: DoctorVerification): void {
-    if (!verification.id) {
-      this.snackBar.open('ID de vérification manquant', 'Fermer', { duration: 3000 });
-      return;
-    }
-
-    // Get token from localStorage
-    const token = localStorage.getItem('access_token') || localStorage.getItem('auth_token');
-    if (!token) {
-      this.snackBar.open('Non authentifié', 'Fermer', { duration: 3000 });
-      return;
-    }
-
-    const headers = new HttpHeaders()
-      .set('Authorization', `Bearer ${token}`)
-      .set('Content-Type', 'application/json');
-
-    const statusRequest = {
-      status: 'APPROVED',
-      message: null
-    };
-
-    this.snackBar.open('Tentative d\'approbation avec méthode alternative...', '', { duration: 2000 });
-    console.log(`Trying alternative methods to approve verification ${verification.id}`);
     
-    // Define several possible API endpoints to try
-    const possibleEndpoints = [
-      `${environment.apiUrl}/api/v1/doctor-verifications/${verification.id}/status`,
-      `${environment.apiUrl}/api/v1/admin/doctor-verifications/${verification.id}/status`,
-      `${environment.apiUrl}/api/doctor-verifications/${verification.id}/status`,
-      `${environment.apiUrl}/api/v1/users/doctor-verifications/${verification.id}/status`,
-      `${environment.apiUrl}/api/v1/doctor-verifications/status/${verification.id}`
-    ];
+    this.snackBar.open('Refus en cours...', '', { duration: 2000 });
     
-    console.log('Will try these endpoints:', possibleEndpoints);
-    
-    // Try the first endpoint
-    this.tryApprovalEndpoint(possibleEndpoints, 0, statusRequest, headers, verification.id);
+    this.verificationService.updateVerificationStatus(verification.id, 'rejected', message)
+      .subscribe({
+        next: (response) => {
+          this.snackBar.open('Vérification refusée avec succès', 'Fermer', {
+            duration: 3000
+          });
+          this.loadPendingVerifications();
+        },
+        error: (error) => {
+          console.error('Error rejecting verification:', error);
+          this.snackBar.open('Erreur lors du refus', 'Fermer', {
+            duration: 5000
+          });
+        }
+      });
   }
   
-  // Helper method to try approval endpoints sequentially
-  private tryApprovalEndpoint(endpoints: string[], index: number, data: any, headers: HttpHeaders, verificationId: number): void {
-    if (index >= endpoints.length) {
-      this.snackBar.open('Toutes les tentatives ont échoué', 'Fermer', { duration: 3000 });
-      return;
+  checkImageValid(path: string): boolean {
+    if (!path) return false;
+    
+    // Return cached result if available
+    if (this.validImages.has(path)) {
+      return this.validImages.get(path)!;
     }
     
-    const currentEndpoint = endpoints[index];
-    console.log(`Trying endpoint (${index + 1}/${endpoints.length}): ${currentEndpoint}`);
-    
-    this.http.put(currentEndpoint, data, { headers }).subscribe({
-      next: (response) => {
-        console.log(`Endpoint ${index + 1} successful:`, response);
-        this.snackBar.open('Vérification approuvée avec succès', 'Fermer', { duration: 3000 });
-        this.loadPendingVerifications();
-      },
-      error: (error) => {
-        console.error(`Endpoint ${index + 1} failed:`, error);
-        // Try the next endpoint
-        this.tryApprovalEndpoint(endpoints, index + 1, data, headers, verificationId);
-      }
-    });
+    // Default to true and let error handling update if needed
+    this.validImages.set(path, true);
+    return true;
+  }
+  
+  isPdf(path: string): boolean {
+    return path ? path.toLowerCase().endsWith('.pdf') : false;
   }
 } 

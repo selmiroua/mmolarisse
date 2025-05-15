@@ -12,9 +12,9 @@
         <mat-icon>dashboard</mat-icon>
         <span>Tableau de bord</span>
       </a>
-      <a (click)="showDoctorVerifications()" [class.active]="activeSection === 'verifications'">
+      <a (click)="showVerifications()" [class.active]="activeSection === 'verifications'">
         <mat-icon>verified_user</mat-icon>
-        <span>Vérifications</span>
+        <span>Demandes de vérification</span>
       </a>
       <a (click)="showProfile()" [class.active]="activeSection === 'profile'">
         <mat-icon>person</mat-icon>
@@ -85,98 +85,106 @@
       <!-- Dashboard View -->
       <div *ngIf="activeSection === 'dashboard'" class="dashboard-view">
         <div class="welcome-card">
-          <h1>Bienvenue, {{ currentUser?.firstName }}!</h1>
-          <p>Voici un aperçu de votre tableau de bord administrateur</p>
+          <div class="welcome-text">
+            <h2>Bienvenue sur votre tableau de bord administrateur</h2>
+            <p>Gérez les utilisateurs, consultez les statistiques et administrez la plateforme.</p>
+          </div>
+          <div class="welcome-illustration">
+            <img src="/assets/images/admin-dashboard.svg" alt="Admin Dashboard" onerror="this.src='/assets/images/admin-dashboard.png'">
+          </div>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card pending-verifications">
-            <mat-icon>pending_actions</mat-icon>
-            <div class="stat-info">
-              <span class="stat-value">{{ stats.pendingVerifications }}</span>
-              <span class="stat-label">Vérifications en attente</span>
+        <!-- Stats Cards -->
+        <div class="stats-container">
+          <div class="stats-card">
+            <div class="stats-card-icon">
+              <mat-icon>people</mat-icon>
+            </div>
+            <div class="stats-card-content">
+              <h3>{{ stats.totalUsers || 0 }}</h3>
+              <p>Utilisateurs</p>
             </div>
           </div>
 
-          <div class="stat-card total-doctors">
-            <mat-icon>medical_services</mat-icon>
-            <div class="stat-info">
-              <span class="stat-value">{{ stats.totalDoctors }}</span>
-              <span class="stat-label">Médecins vérifiés</span>
+          <div class="stats-card">
+            <div class="stats-card-icon">
+              <mat-icon>medical_services</mat-icon>
+            </div>
+            <div class="stats-card-content">
+              <h3>{{ stats.totalDoctors || 0 }}</h3>
+              <p>Médecins</p>
             </div>
           </div>
 
-          <div class="stat-card total-patients">
+          <div class="stats-card">
+            <div class="stats-card-icon">
+              <mat-icon>event</mat-icon>
+            </div>
+            <div class="stats-card-content">
+              <h3>{{ stats.totalAppointments || 0 }}</h3>
+              <p>Rendez-vous</p>
+            </div>
+          </div>
+
+          <div class="stats-card">
+            <div class="stats-card-icon">
+              <mat-icon>verified_user</mat-icon>
+            </div>
+            <div class="stats-card-content">
+              <h3>{{ stats.pendingVerifications || 0 }}</h3>
+              <p>Vérifications en attente</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Sections -->
+        <div class="admin-sections">
+          <div class="section-card" (click)="showVerifications()">
+            <mat-icon>verified_user</mat-icon>
+            <h3>Vérifications</h3>
+            <p>Approuver les demandes de vérification des médecins</p>
+          </div>
+
+          <div class="section-card">
             <mat-icon>people</mat-icon>
-            <div class="stat-info">
-              <span class="stat-value">{{ stats.totalPatients }}</span>
-              <span class="stat-label">Patients inscrits</span>
+            <h3>Utilisateurs</h3>
+            <p>Gérer les comptes utilisateurs</p>
+          </div>
+
+          <div class="section-card">
+            <mat-icon>settings</mat-icon>
+            <h3>Paramètres</h3>
+            <p>Configurer la plateforme</p>
+          </div>
+
+          <div class="section-card">
+            <mat-icon>bar_chart</mat-icon>
+            <h3>Statistiques</h3>
+            <p>Consulter les données d'utilisation</p>
+          </div>
+        </div>
+
+        <!-- Secretary Requests -->
+        <div class="requests-section" *ngIf="pendingSecretaryRequests.length > 0">
+          <h2>Demandes de secrétaires en attente</h2>
+          <div class="requests-grid">
+            <div class="request-card" *ngFor="let request of pendingSecretaryRequests">
+              <div class="request-header">
+                <h3>{{ request.firstName }} {{ request.lastName }}</h3>
+                <span class="request-badge">En attente</span>
+              </div>
+              <div class="request-content">
+                <p><strong>Email:</strong> {{ request.email }}</p>
+                <p><strong>ID utilisateur:</strong> {{ request.userId }}</p>
+                <p><strong>Date:</strong> {{ request.createdAt | date:'dd/MM/yyyy' }}</p>
+              </div>
+              <div class="request-actions">
+                <button mat-button color="primary" (click)="approveSecretaryRequest(request.id)">Approuver</button>
+                <button mat-button color="warn" (click)="rejectSecretaryRequest(request.id)">Refuser</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Verifications View -->
-      <div *ngIf="activeSection === 'verifications'" class="verifications-view">
-        <!-- Secretary Requests Section -->
-        <div class="secretary-requests-section">
-          <h2>Demandes des secrétaires</h2>
-
-          <!-- Loading spinner -->
-          <div class="loading-container" *ngIf="loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p>Chargement des demandes...</p>
-          </div>
-
-          <!-- Error message -->
-          <div class="error-container" *ngIf="error">
-            <mat-icon color="warn">error</mat-icon>
-            <p>{{ error }}</p>
-            <button mat-button color="primary" (click)="loadSecretaryRequests()">Réessayer</button>
-          </div>
-
-          <!-- No requests message -->
-          <div class="no-requests" *ngIf="!loading && !error && secretaryRequests.length === 0">
-            <mat-icon>info</mat-icon>
-            <p>Aucune demande en attente</p>
-          </div>
-
-          <!-- Requests list -->
-          <div class="requests-list" *ngIf="!loading && !error && secretaryRequests.length > 0">
-            <mat-card *ngFor="let request of secretaryRequests" class="request-card">
-              <mat-card-header>
-                <mat-card-title>{{ request.firstName }} {{ request.lastName }}</mat-card-title>
-                <mat-card-subtitle>{{ request.email }}</mat-card-subtitle>
-              </mat-card-header>
-              
-              <mat-card-content>
-                <p><strong>Date de demande:</strong> {{ request.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
-                <p><strong>Statut:</strong> 
-                  <span [ngClass]="{'status-pending': request.status === 'PENDING',
-                                   'status-approved': request.status === 'APPROVED',
-                                   'status-rejected': request.status === 'REJECTED'}">
-                    {{ request.status === 'PENDING' ? 'En attente' :
-                       request.status === 'APPROVED' ? 'Approuvée' : 'Rejetée' }}
-                  </span>
-                </p>
-              </mat-card-content>
-
-              <mat-card-actions *ngIf="request.status === 'PENDING'">
-                <button mat-raised-button color="primary" (click)="approveSecretaryRequest(request.id)">
-                  <mat-icon>check</mat-icon>
-                  Approuver
-                </button>
-                <button mat-raised-button color="warn" (click)="rejectSecretaryRequest(request.id)">
-                  <mat-icon>close</mat-icon>
-                  Rejeter
-                </button>
-              </mat-card-actions>
-            </mat-card>
-          </div>
-        </div>
-
-        <!-- Doctor Verifications Section -->
-        <app-doctor-verifications-admin></app-doctor-verifications-admin>
       </div>
 
       <!-- Profile View -->
@@ -188,6 +196,11 @@
       <div *ngIf="activeSection === 'settings'" class="settings-view">
         <h2>Paramètres</h2>
         <!-- Add settings content here -->
+      </div>
+      
+      <!-- Doctor Verifications View -->
+      <div *ngIf="activeSection === 'verifications'" class="verifications-view">
+        <app-doctor-verifications-admin></app-doctor-verifications-admin>
       </div>
       
       <!-- Messaging View -->

@@ -47,20 +47,20 @@ public class DoctorVerification {
     @Column(name = "postal_code", nullable = false)
     private String postalCode;
 
+    @Column(name = "cabinet_name", nullable = false)
+    private String cabinetName;
+
     @Column(nullable = false)
     private String email;
 
-    @Column(name = "cabinet_name", nullable = false)
-    private String cabinetName;
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
 
     @Column(name = "cabinet_photo_path")
     private String cabinetPhotoPath;
 
     @Column(name = "diploma_photo_path")
     private String diplomaPhotoPath;
-
-    @Column(name = "phone_number", nullable = false)
-    private String phoneNumber;
 
     private String message;
 
